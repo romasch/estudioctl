@@ -8,6 +8,10 @@ _has_cmdsvn = False
 import subprocess
 import os
 import os.path
+import re
+
+from logger import SystemLogger
+
 
 
 # Import pysvn if available.
@@ -19,9 +23,9 @@ except ImportError:
 		if subprocess.call(['svn', 'help'], stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=subprocess.PIPE) == 0:
 			_has_cmdsvn = True
 		else:
-			_as_error("pysvn module is not available. SVN command line not available. All SVN operations are disabled.")
+			SystemLogger.error("pysvn module is not available. SVN command line not available. All SVN operations are disabled.")
 	except OSError:
-		_as_error("pysvn module is not available. SVN command line not available. All SVN operations are disabled.")
+		SystemLogger.error("pysvn module is not available. SVN command line not available. All SVN operations are disabled.")
 
 
 def svn_get_login(realm, username, may_save):
@@ -96,7 +100,7 @@ def svn_has_conflicts(path):
 def svn_update(path, force=False):
 	"""Update repository at local path"""
 	global svn, _has_pysvn
-	_to_log("SVN: updating repository at " + path)
+	SystemLogger.debug("SVN: updating repository at " + path)
 	if _has_pysvn:
 		if not svn_is_up_to_date(path) or force:
 			revision = svn.update(path)[0].number
@@ -106,13 +110,13 @@ def svn_update(path, force=False):
 		output = subprocess.check_output(['svn', 'update', path])
 		expr = re.compile(r'.*revision\s([\d]+).*')
 		revision = expr.search(output).group(1)
-	_to_log("SVN: revision " + str(revision))
+	SystemLogger.debug("SVN: revision " + str(revision))
 	return revision
 
 def svn_checkout(url, path):
 	"""Checkout HEAD revision from url to path"""
 	global svn, svn_helper_revision, _has_pysvn
-	_to_log("SVN: checkout from " + url + " to " + path)
+	SystemLogger.debug("SVN: checkout from " + url + " to " + path)
 	if _has_pysvn:
 		svn.checkout(url, path)
 		revision = svn_helper_revision
@@ -120,7 +124,7 @@ def svn_checkout(url, path):
 		output = subprocess.check_output(['svn', 'checkout', url, path])
 		expr = re.compile(r'.*Checked out revision\s([\d]+).*')
 		revision = expr.search(output).group(1)
-	_to_log("SVN: revision " + str(revision))
+	SystemLogger.debug("SVN: revision " + str(revision))
 	return revision
 
 def svn_last_merge_revision_number(url):
@@ -144,47 +148,46 @@ def svn_last_merge_revision_number(url):
 def svn_merge(path, url, rev_start, rev_end):
 	"""Merge repository at path with repository at url"""
 	source_path = os.path.realpath(path)
-	_to_log("SVN merge")
-	_to_log("Path: " + source_path)
-	_to_log("URL: " + url)
-	_to_log("Revision from: " + str(rev_start))
-	_to_log("Revision to: " + str(rev_end))
+	SystemLogger.debug("SVN merge")
+	SystemLogger.debug("Path: " + source_path)
+	SystemLogger.debug("URL: " + url)
+	SystemLogger.debug("Revision from: " + str(rev_start))
+	SystemLogger.debug("Revision to: " + str(rev_end))
 	svn.merge_peg(url, rev_start, rev_end, rev_end, source_path)
 
 def svn_commit(path, message):
 	"""Commit repository at path using the commit message"""
-	_to_log("SVN commit")
-	_to_log("Path: " + path)
-	_to_log("Message: " + message)
+	SystemLogger.debug("SVN commit")
+	SystemLogger.debug("Path: " + path)
+	SystemLogger.debug("Message: " + message)
 	svn.checkin(path, message)
 
 def update_repository(url, path):
 	"""Update repository at given path. If no checkout exists, do a new checkout from given url."""
 	revision = -1
 	if os.path.exists(path):
-		_as_info("Updating repository")
-		_as_info("Path: " + path)
+		SystemLogger.info("Updating repository")
+		SystemLogger.info("Path: " + path)
 		remote_url = svn_info_remote_url(path)
 		if url == remote_url:
 			revision = svn_info_local_revision_number(path)
 			remote_revision = svn_info_remote_revision_number(url)
-			_to_log("Local revision: " + str(revision))
-			_to_log("Remote revision: " + str(remote_revision))
+			SystemLogger.debug("Local revision: " + str(revision))
+			SystemLogger.debug("Remote revision: " + str(remote_revision))
 			if revision == remote_revision:
-				_as_success("Repository '" + path + "' is up-to-date at revision " + str(revision))
+				SystemLogger.success("Repository '" + path + "' is up-to-date at revision " + str(revision))
 			else:
 				revision = svn_update(path)
-				_as_success("Repository '" + path + "' is updated to revision " + str(revision))
+				SystemLogger.success("Repository '" + path + "' is updated to revision " + str(revision))
 		else:
-			_as_error("Repository URL of existing directory '" + path + "'  does not match expected remote url")
-			_as_error("Existing URL: " + remote_url)
-			_as_error("Expected URL: " + url)
+			SystemLogger.error("Repository URL of existing directory '" + path + "'  does not match expected remote url")
+			SystemLogger.error("Existing URL: " + remote_url)
+			SystemLogger.error("Expected URL: " + url)
 	else:
-		_as_info("Checking out repository")
-		_as_info("URL: " + url)
-		_as_info("Location: " + path)
+		SystemLogger.info("Checking out repository")
+		SystemLogger.info("URL: " + url)
+		SystemLogger.info("Location: " + path)
 		revision = svn_checkout(url, path)
-		_as_success("Checkout of revision " + str(revision) + " complete")
+		SystemLogger.success("Checkout of revision " + str(revision) + " complete")
 	return revision 
 
-print ("blub")

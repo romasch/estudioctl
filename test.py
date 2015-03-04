@@ -1,4 +1,7 @@
 import logger
+import svn_utils
+import config
+
 from logger import SystemLogger
 
 def test_logger ():
@@ -9,12 +12,13 @@ def test_logger ():
 		log.success ("success")
 		log.error ("error")
 
+def test_svn():
+	svn_utils.update_repository(config.v_url_svn_trunk_src, "./test")
+
 
 def main ():
-	SystemLogger.success ("Hello World")
-	test_logger()
+	SystemLogger.success ("Starting tests.")
+	#test_svn()
 
 if __name__ == "__main__":
-	with logger.Logger("log.txt", 2) as log:
-		SystemLogger = log
-		main()
+	main()
