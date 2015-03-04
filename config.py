@@ -26,3 +26,12 @@ v_dir_build_eweasel = "build/eweasel"
 
 v_url_svn_trunk_src = "https://svn.eiffel.com/eiffelstudio/trunk/Src/C/run-time/scoop"
 v_url_svn_eve_src = "https://svn.eiffel.com/eiffelstudio/branches/eth/eve/Src"
+
+# Name of log file
+v_log_filename = "./log.txt"
+
+# 0: no output
+# 1: error/warning/success output
+# 2: info output
+# 3: log output
+v_verbose_level = 3
