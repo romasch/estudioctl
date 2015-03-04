@@ -106,7 +106,12 @@ import sys
 import time
 import shutil
 import subprocess
-import urllib2
+
+try:
+	import urllib.request as urllib2
+except ImportError:
+	import urllib2
+
 import re
 import errno
 import glob
@@ -139,37 +144,43 @@ def _to_logfile(text):
 
 def _to_log(text):
 	if v_verbose_level > 2:
-		print text
+		print (text)
 	_to_logfile(text)
 
 def _as_info(text, pre='', force=False):
 	if v_verbose_level > 1 or force:
-		print pre + text
+		print (pre + text)
 	_to_logfile(pre + text)
 
 def _as_warning(text, pre=''):
 	if v_verbose_level > 0:
 		if _has_colorama:
-			print pre + Back.YELLOW + Fore.YELLOW + Style.BRIGHT + text + Style.RESET_ALL
+			print (pre + Back.YELLOW + Fore.YELLOW + Style.BRIGHT + text + Style.RESET_ALL)
 		else:
-			print pre + text
+			print (pre + text)
 	_to_logfile(pre + text)
 
 def _as_error(text, pre=''):
 	if v_verbose_level > 0:
 		if _has_colorama:
-			print pre + Back.RED + Fore.RED + Style.BRIGHT + text + Style.RESET_ALL
+			print (pre + Back.RED + Fore.RED + Style.BRIGHT + text + Style.RESET_ALL)
 		else:
-			print pre + text
+			print (pre + text)
 	_to_logfile(pre + text)
 
 def _as_success(text, pre=''):
 	if v_verbose_level > 0:
 		if _has_colorama:
-			print pre + Back.GREEN + Fore.GREEN + Style.BRIGHT + text + Style.RESET_ALL
+			print (pre + Back.GREEN + Fore.GREEN + Style.BRIGHT + text + Style.RESET_ALL)
 		else:
-			print pre + text
+			print (pre + text)
 	_to_logfile(pre + text)
+
+# Make input a synonym of raw_input in Python 2
+try:
+   input = raw_input
+except NameError:
+   pass
 
 
 # ----------------------------------------------------------------------------
@@ -248,7 +259,7 @@ def download_file(url, filename):
 		with open(path, "wb") as file:
 			file.write(data)
 		_to_log("Download complete")
-	except URLError, e:
+	except URLError as e:
 		path = None
 		if hasattr(e, 'reason'):
 			_as_error("Download of '" + url + "' failed. Reason: " + e.reason)
@@ -367,7 +378,7 @@ def replace_in_file(path, search, replace):
 	import fileinput
 	for line in fileinput.FileInput(path, inplace=1):
 		line = line.replace(search, replace)
-		print line,
+		print (line),
 
 # ----------------------------------------------------------------------------
 # helper functions: svn
@@ -555,10 +566,17 @@ def update_repository(url, path):
 # ----------------------------------------------------------------------------
 
 import smtplib
-from email.MIMEMultipart import MIMEMultipart
-from email.MIMEBase import MIMEBase
-from email.MIMEText import MIMEText
-from email import Encoders
+
+try:
+	from email.MIMEMultipart import MIMEMultipart
+	from email.MIMEBase import MIMEBase
+	from email.MIMEText import MIMEText
+	from email import Encoders
+except ImportError:
+	from email.mime.multipart import MIMEMultipart
+	from email.mime.base import MIMEBase
+	from email.mime.text import MIMEText
+	from email import encoders
 
 def send_mail(to, subject, text, attach=None):
 	"""Send email"""
@@ -704,7 +722,7 @@ def compile_runtime():
 		copy_files(
 			os.path.expandvars(os.path.join("$EIFFEL_SRC", "C", "run-time", "*.h")),
 			os.path.expandvars(os.path.join("$ISE_EIFFEL", "studio", "spec", "$ISE_PLATFORM", "include")))
- 		copy_files(
+		copy_files(
 			os.path.expandvars(os.path.join("$EIFFEL_SRC", "C", "config.sh")),
 			os.path.expandvars(os.path.join("$ISE_EIFFEL", "studio", "spec", "$ISE_PLATFORM", "include")))
 		copy_files(
@@ -894,13 +912,13 @@ def make_merge():
 	try:
 		delete_path(merge_path)
 		update_repository(v_url_svn_eve, merge_path)
-	except Exception, e1:
+	except Exception as e1:
 		_as_warning("Checkout failed. Trying one more time.")
 		send_mail(v_email_merge_info, "[EVE] WARNING: checkout failed", "I will try again.")
 		try:
 			delete_path(merge_path)
 			update_repository(v_url_svn_eve, merge_path)
-		except Exception, e2:
+		except Exception as e2:
 			_as_error("Checkout failed, again...")
 			send_mail(v_email_merge_info, "[EVE] ERROR: checkout failed again", "I give up...")
 			sys.exit(0)
@@ -929,9 +947,9 @@ EVE""")
 			send_mail(v_email_merge_info, "[EVE] WAITING: merge produced conflicts", "Resolve conflicts manually and then continue script.")
 		else:
 			_as_error("There are still conflits!")
-		print "---"
-		print "Press enter when conflicts are resolved."
-		raw_input()
+		print ("---")
+		print ("Press enter when conflicts are resolved.")
+		input()
 		success = not svn_has_conflicts(merge_path)
 	_as_success("Merge successful")
 
@@ -950,9 +968,9 @@ EVE""")
 			send_mail(v_email_merge_info, "[EVE] WAITING: EVE compilation failed", "Solve compilation problems manually and then continue script.")
 		else:
 			_as_error("compilation still fails!")
-		print "---"
-		print "Press enter when compilation problems are resolved."
-		raw_input()
+		print ("---")
+		print ("Press enter when compilation problems are resolved.")
+		input()
 		if not is_eve_compilation_successful('bench'):
 			compile_runtime()
 			compile_eve('bench')
@@ -971,10 +989,10 @@ EVE""")
 			send_mail(v_email_merge_info, "[EVE] WAITING: commit failed", "Commit manually and then continue script.")
 		else:
 			_as_error("Local revision (" + str(svn_info_local_revision_number(merge_path)) + ") still smaller than TRUNK (" + str(trunk_revision) + ")")
-		print "---"
-		print "Press enter when you have commited the repository manually."
-		print "Commit message: " + message
-		raw_input()
+		print ("---")
+		print ("Press enter when you have commited the repository manually.")
+		print ("Commit message: " + message)
+		input()
 		svn_update (merge_path, true)
 	_as_success("Commit successful")
 	
@@ -1075,8 +1093,12 @@ def update_environment_variables():
 		set_persistent_environment_variable("ISE_PLATFORM", d_ise_platform)
 	# ISE_EIFFEL
 	version, path = get_installed_version()
-	if not "ISE_EIFFEL" in os.environ or os.getenv("ISE_EIFFEL") != path:
+	if "ISE_EIFFEL" in os.environ and path == None:
+		_to_log ("WARNING: No nightly build available. Using ISE_EIFFEL = " + os.getenv("ISE_EIFFEL"))
+	elif not "ISE_EIFFEL" in os.environ or os.getenv("ISE_EIFFEL") != path:
 		set_persistent_environment_variable("ISE_EIFFEL", path)
+	else:
+		raise Exception ("Could not set ISE_EIFFEL environment variable.")
 	# ISE_C_COMPILER
 	if not "ISE_C_COMPILER" in os.environ or os.getenv("ISE_C_COMPILER") != d_ise_c_compiler:
 		set_persistent_environment_variable("ISE_C_COMPILER", d_ise_c_compiler)
@@ -1194,10 +1216,10 @@ def main():
 if __name__ == "__main__":
 	try:
 		main()
-	except Exception, e:
+	except Exception as e:
 		import traceback
 		traceback.print_exc()
-		raw_input()
+		input()
 
 _as_info("All done (duration " + time.strftime('%H:%M:%S', time.gmtime(time.time()-script_start)) + ")", force=True)
 _log_file.close
