@@ -119,9 +119,10 @@ import re
 import errno
 import glob
 
-import esvn
 from elogger import SystemLogger
-
+import esvn
+import elocation
+import eutils
 
 # Make input a synonym of raw_input in Python 2
 try:
@@ -215,107 +216,6 @@ def download_file(url, filename):
 		else:
 			raise e
 	return path
-	
-def extract_file(file):
-	SystemLogger.debug("Extracting file")
-	SystemLogger.debug("Path: " + file)
-	if platform.system() == 'Windows':
-		# TODO: get path from registry
-		executable = os.path.join('C:\\', 'Program Files', '7-zip', '7z.exe')
-		if os.path.isfile(executable):
-			if execute([executable, 'x', file], SystemLogger.get_file()) == 0:
-				SystemLogger.debug("Extraction complete")
-			else:
-				SystemLogger.error("Extraction of '" + file + "' failed")
-		else:
-			SystemLogger.error("Extraction of '" + file + "' failed. 7zip executable not found at " + executable)
-	else:
-		if execute(['tar', '-xjf', file], SystemLogger.get_file()) == 0:
-			SystemLogger.debug("Extraction complete")
-		else:
-			SystemLogger.error("Extraction of '" + file + "' failed")
-
-def compress_path(path, basename=None):
-	SystemLogger.debug("Compressing path")
-	SystemLogger.debug("Path: " + path)
-	result = None
-	if basename == None:
-		basename = os.path.basename(path)
-	if platform.system() == 'Windows':
-		output_file = os.path.join('.', basename + '.' + d_archive_extension)
-		SystemLogger.debug("Destination: " + output_file)
-		# TODO: get path from registry
-		executable = os.path.join('C:\\', 'Program Files', '7-zip', '7z.exe')
-		if os.path.isfile(executable):
-			if execute([executable, 'a', output_file, path], SystemLogger.get_file()) == 0:
-				SystemLogger.debug("Compression complete")
-				result = output_file
-			else:
-				SystemLogger.error("Compression of '" + path + "' failed")
-		else:
-			SystemLogger.error("Comperssion of '" + path + "' failed. 7zip executable not found at " + executable)
-	else:
-		output_file = os.path.realpath(os.path.join('.', basename + '.' + d_archive_extension))
-		workingdir, compressdir = os.path.split(path)
-		if execute(['tar', '-C', workingdir, '-cjf', output_file, compressdir], SystemLogger.get_file()) == 0:
-			SystemLogger.debug("Compression complete")
-			result = output_file
-		else:
-			SystemLogger.error("Compression of '" + path + "' failed")
-	return result
-
-def move_path(source, target):
-	SystemLogger.debug("Moving path")
-	SystemLogger.debug("Source: " + source)
-	SystemLogger.debug("Target: " + target)
-	if not os.path.exists(source):
-		SystemLogger.error("Cannot move '" + source + "' to '" + target + "'. Source file does not exist")
-	elif os.path.exists(target):
-		SystemLogger.error("Cannot move '" + source + "' to '" + target + "'. Target already exists")
-	else:
-		os.rename(source, target)
-	return
-
-def copy_path(source, target):
-	SystemLogger.debug("Copying path")
-	SystemLogger.debug("Source: " + source)
-	SystemLogger.debug("Target: " + target)
-	result = False
-	if not os.path.exists(source):
-		SystemLogger.error("Cannot copy '" + source + "' to '" + target + "'. Source does not exist")
-	else:
-		if os.path.isfile(source):
-			shutil.copy(source, target)
-			result = True
-		elif os.path.exists(target):
-			SystemLogger.error("Cannot copy directory '" + source + "' to '" + target + "'. Target already exists")
-		else:
-			shutil.copytree(source, target)
-			result = True
-	return result
-
-def delete_path(path):
-	SystemLogger.debug("Deleting path")
-	SystemLogger.debug("Path: " + path)
-	result = False
-	if os.path.isdir(path):
-		shutil.rmtree(path, ignore_errors=False, onerror=handleRemoveReadonly)
-	elif os.path.isfile(path):
-		os.remove(path)
-	if os.path.exists(path):
-		SystemLogger.error("Unable to delete '" + path + "'")
-	else:
-		result = True
-	return result
-
-def handleRemoveReadonly(func, path, exc):
-	import stat
-	excvalue = exc[1]
-	if func in (os.rmdir, os.remove) and excvalue.errno == errno.EACCES:
-		os.chmod(path, stat.S_IRWXU| stat.S_IRWXG| stat.S_IRWXO) # 0777
-		func(path)
-	else:
-		raise
 
 def replace_in_file(path, search, replace):
 	SystemLogger.debug("Replacing in file")
@@ -378,9 +278,9 @@ def update_EiffelStudio():
 	if version > current_version or (v_force_es_version != None and current_version != v_force_es_version):
 		target_file = os.path.join(v_dir_eiffelstudio_base, filename)
 		download_file(url, target_file)
-		extract_file(target_file)
-		move_path(os.path.join(v_dir_eiffelstudio_base, name), os.path.join(v_dir_eiffelstudio_base, name + '_' + version))
-		delete_path(target_file)
+		eutils.extract(target_file)
+		elocation.move(os.path.join(v_dir_eiffelstudio_base, name), os.path.join(v_dir_eiffelstudio_base, name + '_' + version))
+		elocation.delete(target_file)
 		update_environment_variables()
 		current_version = version
 		SystemLogger.success("EiffelStudio version " + version + " installed")
@@ -429,7 +329,7 @@ def copy_files(src_glob, dst_folder):
 	SystemLogger.info("copying files from " + src_glob + " to " + dst_folder)
 	for fname in glob.iglob(src_glob):
 		dst_file = os.path.join(dst_folder, os.path.basename(fname))
-		SystemLogger.debugfile("copying file from " + fname + " to " + dst_file)
+		SystemLogger.debug ("copying file from " + fname + " to " + dst_file)
 		shutil.copy(fname, dst_file)
 
 def execute_calls(calls):
@@ -526,7 +426,7 @@ def compile_eve(target):
 	SystemLogger.info("ISE_LIBRARY: " + os.environ['ISE_LIBRARY'])
 	SystemLogger.info("EIFFEL_SRC: " + os.environ['EIFFEL_SRC'])
 	if os.path.isfile(ecf_path):
-		delete_path(os.path.join(project_path, "EIFGENs", target))
+		elocation.delete(os.path.join(project_path, "EIFGENs", target))
 		olddir = os.getcwd()
 		os.chdir(os.path.dirname(ecf_path))
 		code = execute([ec_path, "-config", ecf_path, "-target", target, "-c_compile", "-batch"], SystemLogger.get_file())
@@ -547,7 +447,7 @@ def finalize_eve(target):
 	SystemLogger.info("ECF: " + ecf_path)
 	SystemLogger.info("Target: " + target)
 	if os.path.isfile(ecf_path):
-		delete_path(os.path.join(project_path, "EIFGENs"))
+		elocation.delete(os.path.join(project_path, "EIFGENs"))
 		olddir = os.getcwd()
 		os.chdir(os.path.dirname(ecf_path))
 		code = execute([ec_path, "-config", ecf_path, "-target", target, "-c_compile", "-finalize", "-batch"], SystemLogger.get_file())
@@ -587,59 +487,59 @@ def make_delivery():
 	finalize_eve('bench')
 	revert_version_number()
 	# copy EiffelStudio to delivery destination (this copies the runtime)
-	copy_path(os.getenv("ISE_EIFFEL"), delivery_path)
+	elocation.copy(os.getenv("ISE_EIFFEL"), delivery_path)
 	# copy finalized eve to delivery destination
 	eve_exe_source = os.path.join(v_dir_eve_source, 'Eiffel', 'Ace', 'EIFGENs', 'bench', 'F_code', d_eve_exe_name)
 	eve_exe_target = os.path.join(delivery_path, 'studio', 'spec', os.getenv("ISE_PLATFORM"), 'bin', d_eve_exe_name)
-	copy_path(eve_exe_source, eve_exe_target)
+	elocation.copy(eve_exe_source, eve_exe_target)
 	# AutoProof: copy update to base library
 	source = os.path.join(v_dir_eve_source, 'library', 'base', 'eve')
 	target = os.path.join(delivery_path, 'library', 'base', 'eve')
-	copy_path(source, target)
+	elocation.copy(source, target)
 	source = os.path.join(v_dir_eve_source, 'library', 'base', 'base2')
 	target = os.path.join(delivery_path, 'library', 'base', 'base2')
-	copy_path(source, target)
+	elocation.copy(source, target)
 	source = os.path.join(v_dir_eve_source, 'library', 'base', 'mml')
 	target = os.path.join(delivery_path, 'library', 'base', 'mml')
-	copy_path(source, target)
+	elocation.copy(source, target)
 	source = os.path.join(v_dir_eve_source, 'library', 'base', 'base-eve.ecf')
 	target = os.path.join(delivery_path, 'library', 'base', 'base-eve.ecf')
-	copy_path(source, target)
+	elocation.copy(source, target)
 	# AutoProof: copy ecf for precompile
 	source = os.path.join(v_dir_eve_source, 'Delivery', 'precomp', 'spec', 'platform', 'base-eve.ecf')
 	target = os.path.join(delivery_path, 'precomp', 'spec', os.getenv("ISE_PLATFORM"), 'base-eve.ecf')
-	copy_path(source, target)
+	elocation.copy(source, target)
 	# AutoProof: copy Boogie files
 	source = os.path.join(v_dir_eve_source, 'Delivery', 'studio', 'tools', 'autoproof')
 	target = os.path.join(delivery_path, 'studio', 'tools', 'autoproof')
-	copy_path(source, target)
+	elocation.copy(source, target)
 	# copy Boogie to delivery destination
 	boogie_target = os.path.join(delivery_path, 'studio', 'tools', 'boogie')
-	copy_path(v_dir_boogie, boogie_target)
+	elocation.copy(v_dir_boogie, boogie_target)
 	# copy libraries to delivery destination
 	source = os.path.join(v_dir_eve_source, 'library', 'fixing')
 	target = os.path.join(delivery_path, 'library', 'fixing')
-	copy_path(source, target)
+	elocation.copy(source, target)
 # TODO
 	# copy install/run scripts to destination
 	source = os.path.join(v_dir_eve_source, 'Delivery', 'run_eve.bat')
 	target = os.path.join(delivery_path, 'run_eve.bat')
-	copy_path(source, target)
+	elocation.copy(source, target)
 	source = os.path.join(v_dir_eve_source, 'Delivery', 'run_eve.py')
 	target = os.path.join(delivery_path, 'run_eve.py')
-	copy_path(source, target)
+	elocation.copy(source, target)
 	# generate zip archive
-	archive_path = compress_path(delivery_path, delivery_name + "-" + d_ise_platform)
+	archive_path = eutils.compress(delivery_path, delivery_name + "-" + d_ise_platform)
 	delivery_file = os.path.join(v_dir_delivery, os.path.basename(archive_path))
-	move_path(archive_path, delivery_file)
+	elocation.move(archive_path, delivery_file)
 	# clean up
-	delete_path(delivery_path)
+	elocation.delete(delivery_path)
 	SystemLogger.success("Delivery " + delivery_name + " finished")
 	# upload zip to server
 	result = None
 	if os.path.exists(v_dir_delivery_remote):
 		remote_file = os.path.join(v_dir_delivery_remote, os.path.basename(delivery_file))
-		copy_path(delivery_file, remote_file)
+		elocation.copy(delivery_file, remote_file)
 		SystemLogger.success("Delivery copied to remote location")
 		result = v_remote_base_url + '/' + os.path.basename(delivery_file)
 	else:
@@ -677,13 +577,13 @@ def make_merge():
 
 	# update repository
 	try:
-		delete_path(merge_path)
+		elocation.delete(merge_path)
 		esvn.update_repository(v_url_svn_eve, merge_path)
 	except Exception as e1:
 		SystemLogger.warning("Checkout failed. Trying one more time.")
 		send_mail(v_email_merge_info, "[EVE] WARNING: checkout failed", "I will try again.")
 		try:
-			delete_path(merge_path)
+			elocation.delete(merge_path)
 			esvn.update_repository(v_url_svn_eve, merge_path)
 		except Exception as e2:
 			SystemLogger.error("Checkout failed, again...")
