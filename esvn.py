@@ -32,7 +32,7 @@ except ImportError:
 def svn_get_login(realm, username, may_save):
 	return True, v_svn_user, v_svn_password, False
 
-def svn_ssl_server_trust_prompt(trust_dict):
+def ssl_server_trust_prompt(trust_dict):
 	"""Helper function to ignore any SSL trust errors"""
 	return True, trust_dict['failures'], True
 
@@ -49,7 +49,7 @@ if _has_pysvn:
 	svn.callback_ssl_server_trust_prompt = svn_ssl_server_trust_prompt
 	svn.callback_notify = svn_notify
 
-def svn_info_remote_url(path):
+def info_remote_url(path):
 	"""Remote URL of the repository at local path"""
 	global svn, _has_pysvn
 	if _has_pysvn:
@@ -60,7 +60,7 @@ def svn_info_remote_url(path):
 		expr = re.compile(r'^URL:\s(.*)$', re.M)
 		return expr.search(output).group(1).strip()
 
-def svn_info_local_revision_number(path):
+def info_local_revision_number(path):
 	"""Revision number of the repository at local path"""
 	global svn, _has_pysvn
 	if _has_pysvn:
@@ -71,7 +71,7 @@ def svn_info_local_revision_number(path):
 		expr = re.compile(r'^Revision:\s(.*)$', re.M)
 		return expr.search(output).group(1)
 
-def svn_info_remote_revision_number(url):
+def info_remote_revision_number(url):
 	"""Revision number of the repository at remote URL"""
 	global svn, _has_pysvn
 	if _has_pysvn:
@@ -82,14 +82,14 @@ def svn_info_remote_revision_number(url):
 		expr = re.compile(r'^Revision:\s(.*)$', re.M)
 		return expr.search(output).group(1)
 
-def svn_is_up_to_date(path):
+def is_up_to_date(path):
 	"""Is repository at local path up to date?"""
-	remote_url = svn_info_remote_url(path)
-	remote_revision = svn_info_remote_revision_number(remote_url)
-	local_revision = svn_info_local_revision_number(path)
+	remote_url = info_remote_url(path)
+	remote_revision = info_remote_revision_number(remote_url)
+	local_revision = info_local_revision_number(path)
 	return local_revision == remote_revision
 
-def svn_has_conflicts(path):
+def has_conflicts(path):
 	"""Does repository at path have any conflicts?"""
 	global svn
 	changed = svn.status(path, ignore_externals=True)
@@ -103,10 +103,10 @@ def update(path, force=False):
 	global svn, _has_pysvn
 	SystemLogger.debug("SVN: updating repository at " + path)
 	if _has_pysvn:
-		if not svn_is_up_to_date(path) or force:
+		if not is_up_to_date(path) or force:
 			revision = svn.update(path)[0].number
 		else:
-			revision = svn_info_local_revision_number(path)
+			revision = info_local_revision_number(path)
 	else:
 		output = subprocess.check_output(['svn', 'update', path]).decode(v_encoding)
 		expr = re.compile(r'.*revision\s([\d]+).*')
@@ -114,7 +114,7 @@ def update(path, force=False):
 	SystemLogger.debug("SVN: revision " + str(revision))
 	return revision
 
-def svn_checkout(url, path):
+def checkout(url, path):
 	"""Checkout HEAD revision from url to path"""
 	global svn, svn_helper_revision, _has_pysvn
 	SystemLogger.debug("SVN: checkout from " + url + " to " + path)
@@ -128,10 +128,10 @@ def svn_checkout(url, path):
 	SystemLogger.debug("SVN: revision " + str(revision))
 	return revision
 
-def svn_last_merge_revision_number(url):
+def last_merge_revision_number(url):
 	"""Get revision number of last merge of repository at url"""
 	global svn
-	head_revision = svn_info_remote_revision_number(url)
+	head_revision = info_remote_revision_number(url)
 	bottom_revision = head_revision
 	found_revision = -1
 	while True:
@@ -146,7 +146,7 @@ def svn_last_merge_revision_number(url):
 		if bottom_revision < 0:
 			return -1
 
-def svn_merge(path, url, rev_start, rev_end):
+def merge(path, url, rev_start, rev_end):
 	"""Merge repository at path with repository at url"""
 	source_path = os.path.realpath(path)
 	SystemLogger.debug("SVN merge")
@@ -156,7 +156,7 @@ def svn_merge(path, url, rev_start, rev_end):
 	SystemLogger.debug("Revision to: " + str(rev_end))
 	svn.merge_peg(url, rev_start, rev_end, rev_end, source_path)
 
-def svn_commit(path, message):
+def commit(path, message):
 	"""Commit repository at path using the commit message"""
 	SystemLogger.debug("SVN commit")
 	SystemLogger.debug("Path: " + path)
@@ -169,10 +169,10 @@ def update_repository(url, path):
 	if os.path.exists(path):
 		SystemLogger.info("Updating repository")
 		SystemLogger.info("Path: " + path)
-		remote_url = svn_info_remote_url(path)
+		remote_url = info_remote_url(path)
 		if url == remote_url:
-			revision = svn_info_local_revision_number(path)
-			remote_revision = svn_info_remote_revision_number(url)
+			revision = info_local_revision_number(path)
+			remote_revision = info_remote_revision_number(url)
 			SystemLogger.debug("Local revision: " + str(revision))
 			SystemLogger.debug("Remote revision: " + str(remote_revision))
 			if revision == remote_revision:
@@ -188,7 +188,7 @@ def update_repository(url, path):
 		SystemLogger.info("Checking out repository")
 		SystemLogger.info("URL: " + url)
 		SystemLogger.info("Location: " + path)
-		revision = svn_checkout(url, path)
+		revision = checkout(url, path)
 		SystemLogger.success("Checkout of revision " + str(revision) + " complete")
 	return revision 
 

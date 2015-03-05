@@ -25,7 +25,7 @@ v_dir_build = "build"
 v_dir_build_eweasel = "build/eweasel"
 
 v_url_svn_trunk_src = "https://svn.eiffel.com/eiffelstudio/trunk/Src/C/run-time/scoop"
-v_url_svn_eve_src = "https://svn.eiffel.com/eiffelstudio/branches/eth/eve/Src"
+v_url_svn_eve_src = "https://svn.eiffel.com/eiffelstudio/branches/eth/eve/Src/C/run-time/scoop"
 
 # Name of log file
 v_log_filename = "./log.txt"
