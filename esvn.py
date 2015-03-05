@@ -10,9 +10,10 @@ import os
 import os.path
 import re
 
-from logger import SystemLogger
+from elogger import SystemLogger
 
-
+import sys
+v_encoding = sys.stdout.encoding
 
 # Import pysvn if available.
 try:
@@ -55,7 +56,7 @@ def svn_info_remote_url(path):
 		info = svn.info2(path, revision=pysvn.Revision(pysvn.opt_revision_kind.working), recurse=False)
 		return info[0][1]["URL"]
 	else:
-		output = subprocess.check_output(['svn', 'info', path])
+		output = subprocess.check_output(['svn', 'info', path]).decode(v_encoding)
 		expr = re.compile(r'^URL:\s(.*)$', re.M)
 		return expr.search(output).group(1).strip()
 
@@ -66,7 +67,7 @@ def svn_info_local_revision_number(path):
 		info = svn.info2(path, revision=pysvn.Revision(pysvn.opt_revision_kind.working), recurse=False)
 		return info[0][1]["rev"].number
 	else:
-		output = subprocess.check_output(['svn', 'info', path])
+		output = subprocess.check_output(['svn', 'info', path]).decode(v_encoding)
 		expr = re.compile(r'^Revision:\s(.*)$', re.M)
 		return expr.search(output).group(1)
 
@@ -77,7 +78,7 @@ def svn_info_remote_revision_number(url):
 		info = svn.info2(url, revision=pysvn.Revision(pysvn.opt_revision_kind.head), recurse=False)
 		return info[0][1]["rev"].number
 	else:
-		output = subprocess.check_output(['svn', 'info', url])
+		output = subprocess.check_output(['svn', 'info', url]).decode(v_encoding)
 		expr = re.compile(r'^Revision:\s(.*)$', re.M)
 		return expr.search(output).group(1)
 
@@ -107,7 +108,7 @@ def svn_update(path, force=False):
 		else:
 			revision = svn_info_local_revision_number(path)
 	else:
-		output = subprocess.check_output(['svn', 'update', path])
+		output = subprocess.check_output(['svn', 'update', path]).decode(v_encoding)
 		expr = re.compile(r'.*revision\s([\d]+).*')
 		revision = expr.search(output).group(1)
 	SystemLogger.debug("SVN: revision " + str(revision))
@@ -121,7 +122,7 @@ def svn_checkout(url, path):
 		svn.checkout(url, path)
 		revision = svn_helper_revision
 	else:
-		output = subprocess.check_output(['svn', 'checkout', url, path])
+		output = subprocess.check_output(['svn', 'checkout', url, path]).decode(v_encoding)
 		expr = re.compile(r'.*Checked out revision\s([\d]+).*')
 		revision = expr.search(output).group(1)
 	SystemLogger.debug("SVN: revision " + str(revision))
