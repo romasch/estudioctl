@@ -98,7 +98,7 @@ def svn_has_conflicts(path):
 			return True
 	return False
 
-def svn_update(path, force=False):
+def update(path, force=False):
 	"""Update repository at local path"""
 	global svn, _has_pysvn
 	SystemLogger.debug("SVN: updating repository at " + path)
@@ -178,7 +178,7 @@ def update_repository(url, path):
 			if revision == remote_revision:
 				SystemLogger.success("Repository '" + path + "' is up-to-date at revision " + str(revision))
 			else:
-				revision = svn_update(path)
+				revision = update(path)
 				SystemLogger.success("Repository '" + path + "' is updated to revision " + str(revision))
 		else:
 			SystemLogger.error("Repository URL of existing directory '" + path + "'  does not match expected remote url")

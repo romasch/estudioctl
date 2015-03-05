@@ -50,6 +50,7 @@
 # TODO
 # http://www.tutorialspoint.com/python/python_gui_programming.htm
 
+import config
 
 # <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 # SETUP VARIABLES
@@ -81,8 +82,10 @@ v_log_filename = "./log.txt"
 
 # URLs
 v_url_svn_eve = "https://svn.eiffel.com/eiffelstudio/branches/eth/eve"
-v_url_svn_eve_src = "https://svn.eiffel.com/eiffelstudio/branches/eth/eve/Src"
-v_url_svn_trunk = "https://svn.eiffel.com/eiffelstudio/trunk"
+#v_url_svn_eve_src = "https://svn.eiffel.com/eiffelstudio/branches/eth/eve/Src"
+v_url_svn_eve_src = config.v_url_svn_eve_src
+#v_url_svn_trunk = "https://svn.eiffel.com/eiffelstudio/trunk"
+v_url_svn_trunk = config.v_url_svn_trunk_src
 v_url_eiffelstudio_download = ["ftp://ftp.eiffel.com/pub/beta/nightly", "ftp://ftp.eiffel.com/pub/beta/15.01/"]
 
 v_svn_user = ""
@@ -116,65 +119,9 @@ import re
 import errno
 import glob
 
-# clear log file
-open(v_log_filename, 'w').close()
-# open log file
-_log_file = open(v_log_filename, 'w')
-# start timer
-script_start = time.time()
+import esvn
+from elogger import SystemLogger
 
-# ----------------------------------------------------------------------------
-# helper functions: printing
-# ----------------------------------------------------------------------------
-
-_has_colorama = False
-try:
-	from colorama import init, Fore, Back, Style
-	init()
-	_has_colorama = True
-except ImportError:
-	pass
-
-def _to_logfile(text):
-	_log_file.write(time.strftime('%H:%M:%S', time.gmtime(time.time() - script_start)))
-	_log_file.write("  ---  ")
-	_log_file.write(text)
-	_log_file.write("\n")
-	_log_file.flush()
-
-def _to_log(text):
-	if v_verbose_level > 2:
-		print (text)
-	_to_logfile(text)
-
-def _as_info(text, pre='', force=False):
-	if v_verbose_level > 1 or force:
-		print (pre + text)
-	_to_logfile(pre + text)
-
-def _as_warning(text, pre=''):
-	if v_verbose_level > 0:
-		if _has_colorama:
-			print (pre + Back.YELLOW + Fore.YELLOW + Style.BRIGHT + text + Style.RESET_ALL)
-		else:
-			print (pre + text)
-	_to_logfile(pre + text)
-
-def _as_error(text, pre=''):
-	if v_verbose_level > 0:
-		if _has_colorama:
-			print (pre + Back.RED + Fore.RED + Style.BRIGHT + text + Style.RESET_ALL)
-		else:
-			print (pre + text)
-	_to_logfile(pre + text)
-
-def _as_success(text, pre=''):
-	if v_verbose_level > 0:
-		if _has_colorama:
-			print (pre + Back.GREEN + Fore.GREEN + Style.BRIGHT + text + Style.RESET_ALL)
-		else:
-			print (pre + text)
-	_to_logfile(pre + text)
 
 # Make input a synonym of raw_input in Python 2
 try:
@@ -221,7 +168,7 @@ elif platform.system() == 'Linux':
 	d_compile_runtime_script = "compile_es/linux/compile_runtime.bat"
 	d_copy_runtime_script = "compile_es/linux/copy_runtime.bat"
 else:
-	_as_error("Platform " + platform.system() + " not supported")
+	SystemLogger.error("Platform " + platform.system() + " not supported")
 	sys.exit()
 
 # ----------------------------------------------------------------------------
@@ -229,7 +176,7 @@ else:
 # ----------------------------------------------------------------------------
 
 def execute(program, output_file = None, execution_directory = None):
-	_to_log("Executing " + ' '.join(program))
+	SystemLogger.debug("Executing " + ' '.join(program))
 	if isinstance(output_file, str):
 		pipe = open(output_file, 'a')
 	else:
@@ -241,7 +188,7 @@ def execute(program, output_file = None, execution_directory = None):
 	proc.communicate()
 	if isinstance(output_file, str):
 		pipe.close()
-	_to_log("Finished with code " + str(proc.returncode))
+	SystemLogger.debug("Finished with code " + str(proc.returncode))
 	return proc.returncode
 
 # ----------------------------------------------------------------------------
@@ -249,114 +196,114 @@ def execute(program, output_file = None, execution_directory = None):
 # ----------------------------------------------------------------------------
 
 def download_file(url, filename):
-	_to_log("Downloading file")
-	_to_log("URL: " + url)
-	_to_log("Path: " + filename)
+	SystemLogger.debug("Downloading file")
+	SystemLogger.debug("URL: " + url)
+	SystemLogger.debug("Path: " + filename)
 	try:
 		response = urllib2.urlopen(url)
 		data = response.read()
 		path = os.path.realpath(filename)
 		with open(path, "wb") as file:
 			file.write(data)
-		_to_log("Download complete")
+		SystemLogger.debug("Download complete")
 	except URLError as e:
 		path = None
 		if hasattr(e, 'reason'):
-			_as_error("Download of '" + url + "' failed. Reason: " + e.reason)
+			SystemLogger.error("Download of '" + url + "' failed. Reason: " + e.reason)
 		elif hasattr(e, 'code'):
-			_as_error("Download of '" + url + "' failed with HTTP error code " + str(e.code))
+			SystemLogger.error("Download of '" + url + "' failed with HTTP error code " + str(e.code))
 		else:
 			raise e
 	return path
 	
 def extract_file(file):
-	_to_log("Extracting file")
-	_to_log("Path: " + file)
+	SystemLogger.debug("Extracting file")
+	SystemLogger.debug("Path: " + file)
 	if platform.system() == 'Windows':
 		# TODO: get path from registry
 		executable = os.path.join('C:\\', 'Program Files', '7-zip', '7z.exe')
 		if os.path.isfile(executable):
-			if execute([executable, 'x', file], _log_file) == 0:
-				_to_log("Extraction complete")
+			if execute([executable, 'x', file], SystemLogger.get_file()) == 0:
+				SystemLogger.debug("Extraction complete")
 			else:
-				_as_error("Extraction of '" + file + "' failed")
+				SystemLogger.error("Extraction of '" + file + "' failed")
 		else:
-			_as_error("Extraction of '" + file + "' failed. 7zip executable not found at " + executable)
+			SystemLogger.error("Extraction of '" + file + "' failed. 7zip executable not found at " + executable)
 	else:
-		if execute(['tar', '-xjf', file], _log_file) == 0:
-			_to_log("Extraction complete")
+		if execute(['tar', '-xjf', file], SystemLogger.get_file()) == 0:
+			SystemLogger.debug("Extraction complete")
 		else:
-			_as_error("Extraction of '" + file + "' failed")
+			SystemLogger.error("Extraction of '" + file + "' failed")
 
 def compress_path(path, basename=None):
-	_to_log("Compressing path")
-	_to_log("Path: " + path)
+	SystemLogger.debug("Compressing path")
+	SystemLogger.debug("Path: " + path)
 	result = None
 	if basename == None:
 		basename = os.path.basename(path)
 	if platform.system() == 'Windows':
 		output_file = os.path.join('.', basename + '.' + d_archive_extension)
-		_to_log("Destination: " + output_file)
+		SystemLogger.debug("Destination: " + output_file)
 		# TODO: get path from registry
 		executable = os.path.join('C:\\', 'Program Files', '7-zip', '7z.exe')
 		if os.path.isfile(executable):
-			if execute([executable, 'a', output_file, path], _log_file) == 0:
-				_to_log("Compression complete")
+			if execute([executable, 'a', output_file, path], SystemLogger.get_file()) == 0:
+				SystemLogger.debug("Compression complete")
 				result = output_file
 			else:
-				_as_error("Compression of '" + path + "' failed")
+				SystemLogger.error("Compression of '" + path + "' failed")
 		else:
-			_as_error("Comperssion of '" + path + "' failed. 7zip executable not found at " + executable)
+			SystemLogger.error("Comperssion of '" + path + "' failed. 7zip executable not found at " + executable)
 	else:
 		output_file = os.path.realpath(os.path.join('.', basename + '.' + d_archive_extension))
 		workingdir, compressdir = os.path.split(path)
-		if execute(['tar', '-C', workingdir, '-cjf', output_file, compressdir], _log_file) == 0:
-			_to_log("Compression complete")
+		if execute(['tar', '-C', workingdir, '-cjf', output_file, compressdir], SystemLogger.get_file()) == 0:
+			SystemLogger.debug("Compression complete")
 			result = output_file
 		else:
-			_as_error("Compression of '" + path + "' failed")
+			SystemLogger.error("Compression of '" + path + "' failed")
 	return result
 
 def move_path(source, target):
-	_to_log("Moving path")
-	_to_log("Source: " + source)
-	_to_log("Target: " + target)
+	SystemLogger.debug("Moving path")
+	SystemLogger.debug("Source: " + source)
+	SystemLogger.debug("Target: " + target)
 	if not os.path.exists(source):
-		_as_error("Cannot move '" + source + "' to '" + target + "'. Source file does not exist")
+		SystemLogger.error("Cannot move '" + source + "' to '" + target + "'. Source file does not exist")
 	elif os.path.exists(target):
-		_as_error("Cannot move '" + source + "' to '" + target + "'. Target already exists")
+		SystemLogger.error("Cannot move '" + source + "' to '" + target + "'. Target already exists")
 	else:
 		os.rename(source, target)
 	return
 
 def copy_path(source, target):
-	_to_log("Copying path")
-	_to_log("Source: " + source)
-	_to_log("Target: " + target)
+	SystemLogger.debug("Copying path")
+	SystemLogger.debug("Source: " + source)
+	SystemLogger.debug("Target: " + target)
 	result = False
 	if not os.path.exists(source):
-		_as_error("Cannot copy '" + source + "' to '" + target + "'. Source does not exist")
+		SystemLogger.error("Cannot copy '" + source + "' to '" + target + "'. Source does not exist")
 	else:
 		if os.path.isfile(source):
 			shutil.copy(source, target)
 			result = True
 		elif os.path.exists(target):
-			_as_error("Cannot copy directory '" + source + "' to '" + target + "'. Target already exists")
+			SystemLogger.error("Cannot copy directory '" + source + "' to '" + target + "'. Target already exists")
 		else:
 			shutil.copytree(source, target)
 			result = True
 	return result
 
 def delete_path(path):
-	_to_log("Deleting path")
-	_to_log("Path: " + path)
+	SystemLogger.debug("Deleting path")
+	SystemLogger.debug("Path: " + path)
 	result = False
 	if os.path.isdir(path):
 		shutil.rmtree(path, ignore_errors=False, onerror=handleRemoveReadonly)
 	elif os.path.isfile(path):
 		os.remove(path)
 	if os.path.exists(path):
-		_as_error("Unable to delete '" + path + "'")
+		SystemLogger.error("Unable to delete '" + path + "'")
 	else:
 		result = True
 	return result
@@ -371,195 +318,15 @@ def handleRemoveReadonly(func, path, exc):
 		raise
 
 def replace_in_file(path, search, replace):
-	_to_log("Replacing in file")
-	_to_log("Path: " + path)
-	_to_log("Search: " + search)
-	_to_log("Replace: " + replace)
+	SystemLogger.debug("Replacing in file")
+	SystemLogger.debug("Path: " + path)
+	SystemLogger.debug("Search: " + search)
+	SystemLogger.debug("Replace: " + replace)
 	import fileinput
 	for line in fileinput.FileInput(path, inplace=1):
 		line = line.replace(search, replace)
 		print (line),
 
-# ----------------------------------------------------------------------------
-# helper functions: svn
-# ----------------------------------------------------------------------------
-
-_has_pysvn = False
-_has_cmdsvn = False
-try:
-	import pysvn
-	_has_pysvn = True
-except ImportError:
-	try:
-		if subprocess.call(['svn', 'help'], stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=subprocess.PIPE) == 0:
-			_has_cmdsvn = True
-		else:
-			_as_error("pysvn module is not available. SVN command line not available. All SVN operations are disabled.")
-	except OSError:
-		_as_error("pysvn module is not available. SVN command line not available. All SVN operations are disabled.")
-
-def svn_get_login(realm, username, may_save):
-	return True, v_svn_user, v_svn_password, False
-
-def svn_ssl_server_trust_prompt(trust_dict):
-	"""Helper function to ignore any SSL trust errors"""
-	return True, trust_dict['failures'], True
-
-svn_helper_revision = -1
-def svn_notify(arg):
-	global svn_helper_revision
-	if arg['action'] == pysvn.wc_notify_action.update_completed:
-		svn_helper_revision = arg['revision'].number
-
-_svn = None
-if _has_pysvn:
-	svn = pysvn.Client()
-	svn.callback_get_login = svn_get_login
-	svn.callback_ssl_server_trust_prompt = svn_ssl_server_trust_prompt
-	svn.callback_notify = svn_notify
-
-def svn_info_remote_url(path):
-	"""Remote URL of the repository at local path"""
-	global svn, _has_pysvn
-	if _has_pysvn:
-		info = svn.info2(path, revision=pysvn.Revision(pysvn.opt_revision_kind.working), recurse=False)
-		return info[0][1]["URL"]
-	else:
-		output = subprocess.check_output(['svn', 'info', path])
-		expr = re.compile(r'^URL:\s(.*)$', re.M)
-		return expr.search(output).group(1).strip()
-
-def svn_info_local_revision_number(path):
-	"""Revision number of the repository at local path"""
-	global svn, _has_pysvn
-	if _has_pysvn:
-		info = svn.info2(path, revision=pysvn.Revision(pysvn.opt_revision_kind.working), recurse=False)
-		return info[0][1]["rev"].number
-	else:
-		output = subprocess.check_output(['svn', 'info', path])
-		expr = re.compile(r'^Revision:\s(.*)$', re.M)
-		return expr.search(output).group(1)
-
-def svn_info_remote_revision_number(url):
-	"""Revision number of the repository at remote URL"""
-	global svn, _has_pysvn
-	if _has_pysvn:
-		info = svn.info2(url, revision=pysvn.Revision(pysvn.opt_revision_kind.head), recurse=False)
-		return info[0][1]["rev"].number
-	else:
-		output = subprocess.check_output(['svn', 'info', url])
-		expr = re.compile(r'^Revision:\s(.*)$', re.M)
-		return expr.search(output).group(1)
-
-def svn_is_up_to_date(path):
-	"""Is repository at local path up to date?"""
-	remote_url = svn_info_remote_url(path)
-	remote_revision = svn_info_remote_revision_number(remote_url)
-	local_revision = svn_info_local_revision_number(path)
-	return local_revision == remote_revision
-
-def svn_has_conflicts(path):
-	"""Does repository at path have any conflicts?"""
-	global svn
-	changed = svn.status(path, ignore_externals=True)
-	for f in changed:
-		if f.text_status == pysvn.wc_status_kind.conflicted:
-			return True
-	return False
-
-def svn_update(path, force=False):
-	"""Update repository at local path"""
-	global svn, _has_pysvn
-	_to_log("SVN: updating repository at " + path)
-	if _has_pysvn:
-		if not svn_is_up_to_date(path) or force:
-			revision = svn.update(path)[0].number
-		else:
-			revision = svn_info_local_revision_number(path)
-	else:
-		output = subprocess.check_output(['svn', 'update', path])
-		expr = re.compile(r'.*revision\s([\d]+).*')
-		revision = expr.search(output).group(1)
-	_to_log("SVN: revision " + str(revision))
-	return revision
-
-def svn_checkout(url, path):
-	"""Checkout HEAD revision from url to path"""
-	global svn, svn_helper_revision, _has_pysvn
-	_to_log("SVN: checkout from " + url + " to " + path)
-	if _has_pysvn:
-		svn.checkout(url, path)
-		revision = svn_helper_revision
-	else:
-		output = subprocess.check_output(['svn', 'checkout', url, path])
-		expr = re.compile(r'.*Checked out revision\s([\d]+).*')
-		revision = expr.search(output).group(1)
-	_to_log("SVN: revision " + str(revision))
-	return revision
-
-def svn_last_merge_revision_number(url):
-	"""Get revision number of last merge of repository at url"""
-	global svn
-	head_revision = svn_info_remote_revision_number(url)
-	bottom_revision = head_revision
-	found_revision = -1
-	while True:
-		bottom_revision = bottom_revision - 20
-		log = svn.log(url, pysvn.Revision(pysvn.opt_revision_kind.number, bottom_revision), pysvn.Revision(pysvn.opt_revision_kind.number, head_revision))
-		for entry in log:
-			match = re.search("<<Merged from trunk#(\d+)", entry['message'])
-			if match != None:
-				found_revision = int(match.group(1))
-		if found_revision > 0:
-			return found_revision
-		if bottom_revision < 0:
-			return -1
-
-def svn_merge(path, url, rev_start, rev_end):
-	"""Merge repository at path with repository at url"""
-	source_path = os.path.realpath(path)
-	_to_log("SVN merge")
-	_to_log("Path: " + source_path)
-	_to_log("URL: " + url)
-	_to_log("Revision from: " + str(rev_start))
-	_to_log("Revision to: " + str(rev_end))
-	svn.merge_peg(url, rev_start, rev_end, rev_end, source_path)
-
-def svn_commit(path, message):
-	"""Commit repository at path using the commit message"""
-	_to_log("SVN commit")
-	_to_log("Path: " + path)
-	_to_log("Message: " + message)
-	svn.checkin(path, message)
-
-def update_repository(url, path):
-	"""Update repository at given path. If no checkout exists, do a new checkout from given url."""
-	revision = -1
-	if os.path.exists(path):
-		_as_info("Updating repository")
-		_as_info("Path: " + path)
-		remote_url = svn_info_remote_url(path)
-		if url == remote_url:
-			revision = svn_info_local_revision_number(path)
-			remote_revision = svn_info_remote_revision_number(url)
-			_to_log("Local revision: " + str(revision))
-			_to_log("Remote revision: " + str(remote_revision))
-			if revision == remote_revision:
-				_as_success("Repository '" + path + "' is up-to-date at revision " + str(revision))
-			else:
-				revision = svn_update(path)
-				_as_success("Repository '" + path + "' is updated to revision " + str(revision))
-		else:
-			_as_error("Repository URL of existing directory '" + path + "'  does not match expected remote url")
-			_as_error("Existing URL: " + remote_url)
-			_as_error("Expected URL: " + url)
-	else:
-		_as_info("Checking out repository")
-		_as_info("URL: " + url)
-		_as_info("Location: " + path)
-		revision = svn_checkout(url, path)
-		_as_success("Checkout of revision " + str(revision) + " complete")
-	return revision
 
 # ----------------------------------------------------------------------------
 # helper functions: email
@@ -580,7 +347,7 @@ except ImportError:
 
 def send_mail(to, subject, text, attach=None):
 	"""Send email"""
-	_as_info("Sending email '" + subject + "' to " + str(to))
+	SystemLogger.info("Sending email '" + subject + "' to " + str(to))
 	if to != None:
 		email_user = "eve-noreply@se.inf.ethz.ch"
 		msg = MIMEMultipart()
@@ -603,9 +370,9 @@ def send_mail(to, subject, text, attach=None):
 # ----------------------------------------------------------------------------
 
 def update_EiffelStudio():
-	_as_info("Updating EiffelStudio")
+	SystemLogger.info("Updating EiffelStudio")
 	if v_force_es_version != None:
-		_as_warning("Forcing EiffelStudio version " + v_force_es_version)
+		SystemLogger.warning("Forcing EiffelStudio version " + v_force_es_version)
 	name, filename, version, url = get_nightly_build(d_ise_platform, d_archive_extension)
 	current_version, current_path = get_installed_version()
 	if version > current_version or (v_force_es_version != None and current_version != v_force_es_version):
@@ -616,10 +383,10 @@ def update_EiffelStudio():
 		delete_path(target_file)
 		update_environment_variables()
 		current_version = version
-		_as_success("EiffelStudio version " + version + " installed")
+		SystemLogger.success("EiffelStudio version " + version + " installed")
 	else:
 		update_environment_variables()
-		_as_success("EiffelStudio is up-to-date at version " + current_version)
+		SystemLogger.success("EiffelStudio is up-to-date at version " + current_version)
 	return current_version
 
 def get_nightly_build(platform, extension):
@@ -659,19 +426,19 @@ def get_installed_version():
 # ----------------------------------------------------------------------------
 
 def copy_files(src_glob, dst_folder):
-	_as_info("copying files from " + src_glob + " to " + dst_folder)
+	SystemLogger.info("copying files from " + src_glob + " to " + dst_folder)
 	for fname in glob.iglob(src_glob):
 		dst_file = os.path.join(dst_folder, os.path.basename(fname))
-		_to_logfile("copying file from " + fname + " to " + dst_file)
+		SystemLogger.debugfile("copying file from " + fname + " to " + dst_file)
 		shutil.copy(fname, dst_file)
 
 def execute_calls(calls):
 	for c in calls:
-		execute(c["cmd"], _log_file, os.path.expandvars(c["cwd"]))
+		execute(c["cmd"], SystemLogger.get_file(), os.path.expandvars(c["cwd"]))
 
 def compile_runtime():
 	global d_compile_runtime_script, d_copy_runtime_script
-	_as_info("Compiling runtime\nLocation: " + os.path.join("EIFFEL_SRC", "C"))
+	SystemLogger.info("Compiling runtime\nLocation: " + os.path.join("EIFFEL_SRC", "C"))
 	if platform.system() == 'Windows':
 		calls = [
 			{'cwd': os.path.join("$EIFFEL_SRC", "C"),
@@ -748,49 +515,49 @@ def compile_runtime():
 		execute_calls(calls)
 
 def compile_eve(target):
-	_as_info("Compiling EVE")
+	SystemLogger.info("Compiling EVE")
 	ec_path = os.path.join(os.getenv("ISE_EIFFEL"), "studio", "spec", os.getenv("ISE_PLATFORM"), "bin", d_eve_exe_name)
 	project_path = os.path.realpath(os.path.join(v_dir_eve_source, "Eiffel", "Ace"))
 	ecf_path = os.path.join(project_path, "ec.ecf")
-	_as_info("EiffelStudio: " + ec_path)
-	_as_info("ECF: " + ecf_path)
-	_as_info("Target: " + target)
-	_as_info("ISE_EIFFEL: " + os.environ['ISE_EIFFEL'])
-	_as_info("ISE_LIBRARY: " + os.environ['ISE_LIBRARY'])
-	_as_info("EIFFEL_SRC: " + os.environ['EIFFEL_SRC'])
+	SystemLogger.info("EiffelStudio: " + ec_path)
+	SystemLogger.info("ECF: " + ecf_path)
+	SystemLogger.info("Target: " + target)
+	SystemLogger.info("ISE_EIFFEL: " + os.environ['ISE_EIFFEL'])
+	SystemLogger.info("ISE_LIBRARY: " + os.environ['ISE_LIBRARY'])
+	SystemLogger.info("EIFFEL_SRC: " + os.environ['EIFFEL_SRC'])
 	if os.path.isfile(ecf_path):
 		delete_path(os.path.join(project_path, "EIFGENs", target))
 		olddir = os.getcwd()
 		os.chdir(os.path.dirname(ecf_path))
-		code = execute([ec_path, "-config", ecf_path, "-target", target, "-c_compile", "-batch"], _log_file)
+		code = execute([ec_path, "-config", ecf_path, "-target", target, "-c_compile", "-batch"], SystemLogger.get_file())
 		os.chdir(olddir)
 		if code == 0 and is_eve_compilation_successful(target):
-			_as_success("Compilation of EVE (" + target + ") successful")
+			SystemLogger.success("Compilation of EVE (" + target + ") successful")
 		else:
-			_as_error("Compilation of EVE (" + target + ") failed")
+			SystemLogger.error("Compilation of EVE (" + target + ") failed")
 	else:
-		_as_error("ECF file '" + ecf_path + "' does not exist")
+		SystemLogger.error("ECF file '" + ecf_path + "' does not exist")
 
 def finalize_eve(target):
-	_as_info("Finalizing EVE")
+	SystemLogger.info("Finalizing EVE")
 	ec_path = os.path.join(os.getenv("ISE_EIFFEL"), "studio", "spec", os.getenv("ISE_PLATFORM"), "bin", d_eve_exe_name)
 	project_path = os.path.realpath(os.path.join(v_dir_eve_source, "Eiffel", "Ace"))
 	ecf_path = os.path.join(project_path, "ec.ecf")
-	_as_info("EiffelStudio: " + ec_path)
-	_as_info("ECF: " + ecf_path)
-	_as_info("Target: " + target)
+	SystemLogger.info("EiffelStudio: " + ec_path)
+	SystemLogger.info("ECF: " + ecf_path)
+	SystemLogger.info("Target: " + target)
 	if os.path.isfile(ecf_path):
 		delete_path(os.path.join(project_path, "EIFGENs"))
 		olddir = os.getcwd()
 		os.chdir(os.path.dirname(ecf_path))
-		code = execute([ec_path, "-config", ecf_path, "-target", target, "-c_compile", "-finalize", "-batch"], _log_file)
+		code = execute([ec_path, "-config", ecf_path, "-target", target, "-c_compile", "-finalize", "-batch"], SystemLogger.get_file())
 		os.chdir(olddir)
 		if code == 0 and is_eve_compilation_successful(target, True):
-			_as_success("Finalization of EVE (" + target + ") successful")
+			SystemLogger.success("Finalization of EVE (" + target + ") successful")
 		else:
-			_as_error("Finalization of EVE (" + target + ") failed")
+			SystemLogger.error("Finalization of EVE (" + target + ") failed")
 	else:
-		_as_error("ECF file '" + ecf_path + "' does not exist")
+		SystemLogger.error("ECF file '" + ecf_path + "' does not exist")
 
 def is_eve_compilation_successful(target, finalized = False):
 	success = False
@@ -808,9 +575,9 @@ def is_eve_compilation_successful(target, finalized = False):
 # ----------------------------------------------------------------------------
 
 def make_delivery():
-	_as_info("Generating new delivery")
+	SystemLogger.info("Generating new delivery")
 
-	eve_version = svn_info_local_revision_number(v_dir_eve_source)
+	eve_version = esvn.info_local_revision_number(v_dir_eve_source)
 	delivery_name = 'eve_' + str(eve_version)
 	delivery_path = os.path.realpath(os.path.join(v_dir_delivery, delivery_name))
 	# generate finalized version
@@ -867,30 +634,30 @@ def make_delivery():
 	move_path(archive_path, delivery_file)
 	# clean up
 	delete_path(delivery_path)
-	_as_success("Delivery " + delivery_name + " finished")
+	SystemLogger.success("Delivery " + delivery_name + " finished")
 	# upload zip to server
 	result = None
 	if os.path.exists(v_dir_delivery_remote):
 		remote_file = os.path.join(v_dir_delivery_remote, os.path.basename(delivery_file))
 		copy_path(delivery_file, remote_file)
-		_as_success("Delivery copied to remote location")
+		SystemLogger.success("Delivery copied to remote location")
 		result = v_remote_base_url + '/' + os.path.basename(delivery_file)
 	else:
 		if v_dir_delivery_remote != None:
-			_as_error("Remote location (" + v_dir_delivery_remote + ") does not exist")
+			SystemLogger.error("Remote location (" + v_dir_delivery_remote + ") does not exist")
 	return result
 		
 def update_version_number():
 	file = os.path.join(v_dir_eve_source, 'framework', 'environment', 'interface', 'product_names.e')
 	replace_in_file(file, 'EiffelStudio', 'EVE')
 	file = os.path.join(v_dir_eve_source, 'Eiffel', 'API', 'constants', 'system_constants.e')
-	replace_in_file(file, '0000', str(svn_info_local_revision_number(v_dir_eve_source)))
+	replace_in_file(file, '0000', str(esvn.info_local_revision_number(v_dir_eve_source)))
 
 def revert_version_number():
 	file = os.path.join(v_dir_eve_source, 'framework', 'environment', 'interface', 'product_names.e')
 	replace_in_file(file, 'EVE', 'EiffelStudio')
 	file = os.path.join(v_dir_eve_source, 'Eiffel', 'API', 'constants', 'system_constants.e')
-	replace_in_file(file, str(svn_info_local_revision_number(v_dir_eve_source)), '0000')
+	replace_in_file(file, str(esvn.info_local_revision_number(v_dir_eve_source)), '0000')
 
 # ----------------------------------------------------------------------------
 # Merge
@@ -911,15 +678,15 @@ def make_merge():
 	# update repository
 	try:
 		delete_path(merge_path)
-		update_repository(v_url_svn_eve, merge_path)
+		esvn.update_repository(v_url_svn_eve, merge_path)
 	except Exception as e1:
-		_as_warning("Checkout failed. Trying one more time.")
+		SystemLogger.warning("Checkout failed. Trying one more time.")
 		send_mail(v_email_merge_info, "[EVE] WARNING: checkout failed", "I will try again.")
 		try:
 			delete_path(merge_path)
-			update_repository(v_url_svn_eve, merge_path)
+			esvn.update_repository(v_url_svn_eve, merge_path)
 		except Exception as e2:
-			_as_error("Checkout failed, again...")
+			SystemLogger.error("Checkout failed, again...")
 			send_mail(v_email_merge_info, "[EVE] ERROR: checkout failed again", "I give up...")
 			sys.exit(0)
 
@@ -933,25 +700,25 @@ Regards,
 EVE""")
 
 	# merge
-	trunk_revision = svn_info_remote_revision_number(v_url_svn_trunk)
-	last_merge_revision = svn_last_merge_revision_number(v_url_svn_eve)
-	svn_merge(merge_path, v_url_svn_trunk, pysvn.Revision(pysvn.opt_revision_kind.number, last_merge_revision), pysvn.Revision(pysvn.opt_revision_kind.number, trunk_revision))
+	trunk_revision = esvn.info_remote_revision_number(v_url_svn_trunk)
+	last_merge_revision = esvn.last_merge_revision_number(v_url_svn_eve)
+	esvn.merge(merge_path, v_url_svn_trunk, pysvn.Revision(pysvn.opt_revision_kind.number, last_merge_revision), pysvn.Revision(pysvn.opt_revision_kind.number, trunk_revision))
 
 	# wait for conflicts to be resolved
-	success = not svn_has_conflicts(merge_path)
+	success = not esvn.has_conflicts(merge_path)
 	first = True
 	while not success:
 		if first:
 			first = False
-			_as_error("Merge has produced conflicts")
+			SystemLogger.error("Merge has produced conflicts")
 			send_mail(v_email_merge_info, "[EVE] WAITING: merge produced conflicts", "Resolve conflicts manually and then continue script.")
 		else:
-			_as_error("There are still conflits!")
+			SystemLogger.error("There are still conflits!")
 		print ("---")
 		print ("Press enter when conflicts are resolved.")
 		input()
-		success = not svn_has_conflicts(merge_path)
-	_as_success("Merge successful")
+		success = not esvn.has_conflicts(merge_path)
+	SystemLogger.success("Merge successful")
 
 	# compile
 	check_environment_variables()
@@ -964,10 +731,10 @@ EVE""")
 	while not success:
 		if first:
 			first = False
-			_as_error("EVE compilation failed")
+			SystemLogger.error("EVE compilation failed")
 			send_mail(v_email_merge_info, "[EVE] WAITING: EVE compilation failed", "Solve compilation problems manually and then continue script.")
 		else:
-			_as_error("compilation still fails!")
+			SystemLogger.error("compilation still fails!")
 		print ("---")
 		print ("Press enter when compilation problems are resolved.")
 		input()
@@ -975,26 +742,26 @@ EVE""")
 			compile_runtime()
 			compile_eve('bench')
 		success = is_eve_compilation_successful('bench')
-	_as_success("Compilation successful")
+	SystemLogger.success("Compilation successful")
 
 	# commit
 	message = "<<Merged from trunk#" + str(trunk_revision) + ".>>"
-	svn_commit(merge_path, message)
+	esvn.commit(merge_path, message)
 	first = True
-	svn_update (merge_path, True)
-	while svn_info_local_revision_number(merge_path) <= trunk_revision and False:
+	esvn.update (merge_path, True)
+	while esvn.info_local_revision_number(merge_path) <= trunk_revision and False:
 		if first:
 			first = False
-			_as_error("EVE commit failed")
+			SystemLogger.error("EVE commit failed")
 			send_mail(v_email_merge_info, "[EVE] WAITING: commit failed", "Commit manually and then continue script.")
 		else:
-			_as_error("Local revision (" + str(svn_info_local_revision_number(merge_path)) + ") still smaller than TRUNK (" + str(trunk_revision) + ")")
+			SystemLogger.error("Local revision (" + str(esvn.info_local_revision_number(merge_path)) + ") still smaller than TRUNK (" + str(trunk_revision) + ")")
 		print ("---")
 		print ("Press enter when you have commited the repository manually.")
 		print ("Commit message: " + message)
 		input()
-		svn_update (merge_path, true)
-	_as_success("Commit successful")
+		esvn.update (merge_path, true)
+	SystemLogger.success("Commit successful")
 	
 	# make delivery
 	delivery_url = make_delivery()
@@ -1030,61 +797,61 @@ def check_environment_variables():
 	result = True
 	# ISE_PLATFORM
 	if not "ISE_PLATFORM" in os.environ:
-		_as_error("Environment variable ISE_PLATFORM not set")
+		SystemLogger.error("Environment variable ISE_PLATFORM not set")
 		result = False
 	elif os.getenv("ISE_PLATFORM") != d_ise_platform:
-		_as_error("Value of environment variable ISE_PLATFORM (" + os.getenv("ISE_PLATFORM") + ") should be '" + d_ise_platform + "'")
+		SystemLogger.error("Value of environment variable ISE_PLATFORM (" + os.getenv("ISE_PLATFORM") + ") should be '" + d_ise_platform + "'")
 		result = False
 	else:
-		_to_log("ISE_PLATFORM = " + os.getenv("ISE_PLATFORM"))
+		SystemLogger.debug("ISE_PLATFORM = " + os.getenv("ISE_PLATFORM"))
 	# ISE_EIFFEL
 	if not "ISE_EIFFEL" in os.environ:
-		_as_error("Environment variable ISE_EIFFEL not set")
+		SystemLogger.error("Environment variable ISE_EIFFEL not set")
 		result = False
 	elif not os.path.isdir(os.getenv("ISE_EIFFEL")):
-		_as_error("Path from environment variable ISE_EIFFEL (" + os.getenv("ISE_EIFFEL") + ") does not exist")
+		SystemLogger.error("Path from environment variable ISE_EIFFEL (" + os.getenv("ISE_EIFFEL") + ") does not exist")
 		result = False
 	elif not os.path.isdir(os.path.join(os.getenv("ISE_EIFFEL"), "studio", "spec", os.getenv("ISE_PLATFORM"))):
-		_as_error("Installed EiffelStudio version invalid (no directory found under " + os.path.join(os.getenv("ISE_EIFFEL"), "studio", "spec", os.getenv("ISE_PLATFORM")) + ")")
+		SystemLogger.error("Installed EiffelStudio version invalid (no directory found under " + os.path.join(os.getenv("ISE_EIFFEL"), "studio", "spec", os.getenv("ISE_PLATFORM")) + ")")
 		result = False
 	else:
-		_to_log("ISE_EIFFEL = " + os.getenv("ISE_EIFFEL"))
+		SystemLogger.debug("ISE_EIFFEL = " + os.getenv("ISE_EIFFEL"))
 	# ISE_C_COMPILER
 	if not "ISE_C_COMPILER" in os.environ:
-		_as_error("Environment variable ISE_C_COMPILER not set")
+		SystemLogger.error("Environment variable ISE_C_COMPILER not set")
 		result = False
 	elif os.getenv("ISE_C_COMPILER") != d_ise_c_compiler:
-		_as_error("Value of environment variable ISE_C_COMPILER (" + os.getenv("ISE_C_COMPILER") + ") should be '" + d_ise_c_compiler + "'")
+		SystemLogger.error("Value of environment variable ISE_C_COMPILER (" + os.getenv("ISE_C_COMPILER") + ") should be '" + d_ise_c_compiler + "'")
 		result = False
 	else:
-		_to_log("ISE_C_COMPILER = " + os.getenv("ISE_C_COMPILER"))
+		SystemLogger.debug("ISE_C_COMPILER = " + os.getenv("ISE_C_COMPILER"))
 	# EIFFEL_SRC
 	if not "EIFFEL_SRC" in os.environ:
-		_as_error("Environment variable EIFFEL_SRC not set. EVE compilation not possible")
+		SystemLogger.error("Environment variable EIFFEL_SRC not set. EVE compilation not possible")
 		result = False
 	elif not os.path.isdir(os.getenv("EIFFEL_SRC")):
-		_as_error("Path from environment variable EIFFEL_SRC (" + os.getenv("EIFFEL_SRC") + ") does not exist")
+		SystemLogger.error("Path from environment variable EIFFEL_SRC (" + os.getenv("EIFFEL_SRC") + ") does not exist")
 		result = False
 	else:
-		_to_log("EIFFEL_SRC = " + os.getenv("EIFFEL_SRC"))
+		SystemLogger.debug("EIFFEL_SRC = " + os.getenv("EIFFEL_SRC"))
 	# ISE_LIBRARY
 	if not "ISE_LIBRARY" in os.environ:
-		_as_error("Environment variable ISE_LIBRARY not set. EVE compilation not possible")
+		SystemLogger.error("Environment variable ISE_LIBRARY not set. EVE compilation not possible")
 		result = False
 	elif not os.path.isdir(os.getenv("ISE_LIBRARY")):
-		_as_error("Path from environment variable ISE_LIBRARY (" + os.getenv("ISE_LIBRARY") + ") does not exist")
+		SystemLogger.error("Path from environment variable ISE_LIBRARY (" + os.getenv("ISE_LIBRARY") + ") does not exist")
 		result = False
 	else:
-		_to_log("ISE_LIBRARY = " + os.getenv("ISE_LIBRARY"))
+		SystemLogger.debug("ISE_LIBRARY = " + os.getenv("ISE_LIBRARY"))
 	# PATH: EiffelStudio, Boogie, Z3
 	if not "PATH" in os.environ:
-		_as_error("Environment variable PATH not set")
+		SystemLogger.error("Environment variable PATH not set")
 		result = False
 	elif False: # TODO: check PATH contents
 		result = False
 	# final check
 	if result:
-		_as_success("Environment variables checked")
+		SystemLogger.success("Environment variables checked")
 	return result
 
 def update_environment_variables():
@@ -1094,7 +861,7 @@ def update_environment_variables():
 	# ISE_EIFFEL
 	version, path = get_installed_version()
 	if "ISE_EIFFEL" in os.environ and path == None:
-		_to_log ("WARNING: No nightly build available. Using ISE_EIFFEL = " + os.getenv("ISE_EIFFEL"))
+		SystemLogger.debug ("WARNING: No nightly build available. Using ISE_EIFFEL = " + os.getenv("ISE_EIFFEL"))
 	elif not "ISE_EIFFEL" in os.environ or os.getenv("ISE_EIFFEL") != path:
 		set_persistent_environment_variable("ISE_EIFFEL", path)
 	else:
@@ -1117,10 +884,10 @@ def update_environment_variables():
 	return
 
 def set_persistent_environment_variable(varname, value):
-	_to_log("setting environment variable " + varname + " to " + value)
+	SystemLogger.debug("setting environment variable " + varname + " to " + value)
 	os.environ[varname] = value
 	if platform.system() == 'Windows':
-		execute(['setx', varname, value], _log_file)
+		execute(['setx', varname, value], SystemLogger.get_file())
 	return
 
 # ----------------------------------------------------------------------------
@@ -1152,7 +919,7 @@ def run_eve():
 	if os.path.isfile(exe_path):
 		execute([exe_path, '-gui'])
 	else:
-		_as_error("Finalized eve executable does not exist (" + exe_path + ").")
+		SystemLogger.error("Finalized eve executable does not exist (" + exe_path + ").")
 
 # ----------------------------------------------------------------------------
 # Main program
@@ -1181,13 +948,13 @@ def main():
 			update_environment_variables()
 	elif mode == 'update' and submode == None:
 		update_EiffelStudio()
-		update_repository(v_url_svn_eve_src, v_dir_eve_source)
+		esvn.update_repository(v_url_svn_eve_src, v_dir_eve_source)
 		compile_runtime()
 		compile_eve('bench')
 	elif mode == 'update' and (submode == 'EiffelStudio' or submode == 'es'):
 		update_EiffelStudio()
 	elif mode == 'update' and submode == 'source':
-		update_repository(v_url_svn_eve_src, v_dir_eve_source)
+		esvn.update_repository(v_url_svn_eve_src, v_dir_eve_source)
 	elif mode == 'compile' and submode == 'runtime':
 		if not check_environment_variables():
 			update_environment_variables()
@@ -1208,9 +975,9 @@ def main():
 		make_merge()
 	else:
 		if submode == None:
-			_as_error("invalid option " + mode)
+			SystemLogger.error("invalid option " + mode)
 		else:
-			_as_error("invalid option " + mode + " / " + submode)
+			SystemLogger.error("invalid option " + mode + " / " + submode)
 	return
 
 if __name__ == "__main__":
@@ -1221,5 +988,3 @@ if __name__ == "__main__":
 		traceback.print_exc()
 		input()
 
-_as_info("All done (duration " + time.strftime('%H:%M:%S', time.gmtime(time.time()-script_start)) + ")", force=True)
-_log_file.close

@@ -90,6 +90,8 @@ class Logger:
 				print (pre + text)
 		self._to_logfile(pre + text)
 
+	def get_file(self):
+		return self._log_file
 
 # A unique system-wide logger.
 SystemLogger = Logger(config.v_log_filename, config.v_verbose_level)
