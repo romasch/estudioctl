@@ -51,6 +51,7 @@
 # http://www.tutorialspoint.com/python/python_gui_programming.htm
 
 import config
+import elocation
 
 # <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 # SETUP VARIABLES
@@ -58,7 +59,7 @@ import config
 
 # Base directory where EiffelStudio will be installed
 # EiffelStudio will be installed in a subdirectory EiffelStudioXY_zzzzzz
-v_dir_eiffelstudio_base = "."
+v_dir_eiffelstudio_base = elocation.base_directory() #"."
 
 # Set this to a string of a specific version of EiffelStudio that is already installed (i.e. "12345")
 v_force_es_version = None
@@ -86,7 +87,7 @@ v_url_svn_eve = "https://svn.eiffel.com/eiffelstudio/branches/eth/eve"
 v_url_svn_eve_src = config.v_url_svn_eve_src
 #v_url_svn_trunk = "https://svn.eiffel.com/eiffelstudio/trunk"
 v_url_svn_trunk = config.v_url_svn_trunk_src
-v_url_eiffelstudio_download = ["ftp://ftp.eiffel.com/pub/beta/nightly", "ftp://ftp.eiffel.com/pub/beta/15.01/"]
+v_url_eiffelstudio_download = ["ftp://ftp.eiffel.com/pub/beta/nightly", "ftp://ftp.eiffel.com/pub/beta/15.01/", "ftp://ftp.eiffel.com/pub/beta/15.05/"]
 
 v_svn_user = ""
 v_svn_password = ""
@@ -279,14 +280,14 @@ def update_EiffelStudio():
 		target_file = os.path.join(v_dir_eiffelstudio_base, filename)
 		download_file(url, target_file)
 		eutils.extract(target_file)
-		elocation.move(os.path.join(v_dir_eiffelstudio_base, name), os.path.join(v_dir_eiffelstudio_base, name + '_' + version))
+		elocation.move(os.path.join('.', name), os.path.join(v_dir_eiffelstudio_base, name + '_' + str(version)))
 		elocation.delete(target_file)
 		update_environment_variables()
 		current_version = version
-		SystemLogger.success("EiffelStudio version " + version + " installed")
+		SystemLogger.success("EiffelStudio version " + str(version) + " installed")
 	else:
 		update_environment_variables()
-		SystemLogger.success("EiffelStudio is up-to-date at version " + current_version)
+		SystemLogger.success("EiffelStudio is up-to-date at version " + str(current_version))
 	return current_version
 
 def get_nightly_build(platform, extension):
@@ -298,11 +299,12 @@ def get_nightly_build(platform, extension):
 	for download_page in v_url_eiffelstudio_download:
 		response = urllib2.urlopen(download_page)
 		for line in response:
-			m = expr.match(line)
+			m = expr.match(line.decode('utf-8'))
 			if m != None:
-				if m.group(4) == platform and m.group(5) == extension and ((v_force_es_version == None and version < m.group(3)) or (v_force_es_version != None and v_force_es_version == m.group(3))):
+				parsed_version = int (m.group (3))
+				if m.group(4) == platform and m.group(5) == extension and ((v_force_es_version == None and version < parsed_version) or (v_force_es_version != None and v_force_es_version == parsed_version)):
 					name = m.group(2)
-					version = m.group(3)
+					version = parsed_version
 					filename = m.group(1)
 					url = download_page + '/' + filename
 	return name, filename, version, url
@@ -311,14 +313,16 @@ def get_installed_version():
 	files = os.listdir(v_dir_eiffelstudio_base)
 	version = -1
 	path = None
-	for file in files:
-		if os.path.isdir(file):
-			expr = re.compile(r'Eiffel[\d.]+_([\d]+)')
+	for filename in files:
+		if os.path.isdir(os.path.join (v_dir_eiffelstudio_base, filename)):
+			#expr = re.compile(r'Eiffel[\d.]+_([\d]+)')
 			expr = re.compile(r'Eiffel_[\d.]+_([\d]+)')
-			m = expr.match(file)
-			if m != None and ((v_force_es_version == None and m.group(1) > version) or (v_force_es_version != None and m.group(1) == v_force_es_version)):
-				version = m.group(1)
-				path = os.path.realpath(os.path.join(v_dir_eiffelstudio_base, file))
+			m = expr.match(filename)
+			if m != None:
+				parsed_version = int (m.group(1))
+				if (v_force_es_version == None and parsed_version > version) or (v_force_es_version != None and parsed_version == v_force_es_version):
+					version = parsed_version
+					path = os.path.realpath(os.path.join(v_dir_eiffelstudio_base, filename))
 	return version, path
 
 # ----------------------------------------------------------------------------
@@ -649,7 +653,7 @@ EVE""")
 	esvn.commit(merge_path, message)
 	first = True
 	esvn.update (merge_path, True)
-	while esvn.info_local_revision_number(merge_path) <= trunk_revision and False:
+	while esvn.info_local_revision_number(merge_path) <= trunk_revision and False: #???
 		if first:
 			first = False
 			SystemLogger.error("EVE commit failed")
