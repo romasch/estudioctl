@@ -65,7 +65,8 @@ v_dir_eiffelstudio_base = elocation.base_directory() #"."
 v_force_es_version = None
 
 # Directory where EVE source will be checked out
-v_dir_eve_source = "./eve"
+#v_dir_eve_source = "./eve"
+v_dir_eve_source = elocation.trunk_source()
 
 # Directory where generated deliveries will be saved
 v_dir_delivery = "./delivery"
@@ -421,7 +422,7 @@ def compile_runtime():
 def compile_eve(target):
 	SystemLogger.info("Compiling EVE")
 	ec_path = os.path.join(os.getenv("ISE_EIFFEL"), "studio", "spec", os.getenv("ISE_PLATFORM"), "bin", d_eve_exe_name)
-	project_path = os.path.realpath(os.path.join(v_dir_eve_source, "Eiffel", "Ace"))
+	project_path = os.path.realpath(os.path.join(v_dir_eve_source, "Eiffel", "Ace")) #TODO
 	ecf_path = os.path.join(project_path, "ec.ecf")
 	SystemLogger.info("EiffelStudio: " + ec_path)
 	SystemLogger.info("ECF: " + ecf_path)
@@ -445,7 +446,7 @@ def compile_eve(target):
 def finalize_eve(target):
 	SystemLogger.info("Finalizing EVE")
 	ec_path = os.path.join(os.getenv("ISE_EIFFEL"), "studio", "spec", os.getenv("ISE_PLATFORM"), "bin", d_eve_exe_name)
-	project_path = os.path.realpath(os.path.join(v_dir_eve_source, "Eiffel", "Ace"))
+	project_path = os.path.realpath(os.path.join(v_dir_eve_source, "Eiffel", "Ace")) #TODO
 	ecf_path = os.path.join(project_path, "ec.ecf")
 	SystemLogger.info("EiffelStudio: " + ec_path)
 	SystemLogger.info("ECF: " + ecf_path)
@@ -468,7 +469,7 @@ def is_eve_compilation_successful(target, finalized = False):
 	compile_dir = "W_code"
 	if finalized:
 		compile_dir = "F_code"
-	exe_path = os.path.realpath(os.path.join(v_dir_eve_source, "Eiffel", "Ace", "EIFGENs", target, compile_dir, d_eve_exe_name))
+	exe_path = os.path.realpath(os.path.join(v_dir_eve_source, "Eiffel", "Ace", "EIFGENs", target, compile_dir, d_eve_exe_name)) #TODO
 	if os.path.isfile(exe_path):
 		if execute([exe_path, "-version"], subprocess.PIPE) == 0:
 			success = True
@@ -481,7 +482,7 @@ def is_eve_compilation_successful(target, finalized = False):
 def make_delivery():
 	SystemLogger.info("Generating new delivery")
 
-	eve_version = esvn.info_local_revision_number(v_dir_eve_source)
+	eve_version = esvn.info_local_revision_number(v_dir_eve_source) #TODO
 	delivery_name = 'eve_' + str(eve_version)
 	delivery_path = os.path.realpath(os.path.join(v_dir_delivery, delivery_name))
 	# generate finalized version
@@ -774,11 +775,11 @@ def update_environment_variables():
 	if not "ISE_C_COMPILER" in os.environ or os.getenv("ISE_C_COMPILER") != d_ise_c_compiler:
 		set_persistent_environment_variable("ISE_C_COMPILER", d_ise_c_compiler)
 	# EIFFEL_SRC
-	eiffel_source = os.path.realpath(v_dir_eve_source)
+	eiffel_source = os.path.realpath(elocation.trunk_source())
 	if not "EIFFEL_SRC" in os.environ or os.getenv("EIFFEL_SRC") != eiffel_source:
 		set_persistent_environment_variable("EIFFEL_SRC", eiffel_source)
 	# ISE_LIBRARY
-	eiffel_source = os.path.realpath(v_dir_eve_source)
+	eiffel_source = os.path.realpath(elocation.trunk_source())
 	if not "ISE_LIBRARY" in os.environ or os.getenv("ISE_LIBRARY") != eiffel_source:
 		set_persistent_environment_variable("ISE_LIBRARY", eiffel_source)
 	# PATH: EiffelStudio
@@ -817,9 +818,9 @@ def run_eve():
 		current_version, current_path = get_installed_version()
 	# Update Environment variables
 	update_environment_variables()
-	os.environ["ISE_PRECOMP"] = os.path.join(v_dir_eve_source, "Delivery", "precomp", "spec", "platform");
+	os.environ["ISE_PRECOMP"] = os.path.join(v_dir_eve_source, "Delivery", "precomp", "spec", "platform"); #TODO
 	# Run EiffelStudio
-	exe_path = os.path.realpath(os.path.join(v_dir_eve_source, "Eiffel", "Ace", "EIFGENs", "bench", "F_code", d_eve_exe_name))
+	exe_path = os.path.realpath(os.path.join(v_dir_eve_source, "Eiffel", "Ace", "EIFGENs", "bench", "F_code", d_eve_exe_name)) #TODO
 	if os.path.isfile(exe_path):
 		execute([exe_path, '-gui'])
 	else:
@@ -852,13 +853,13 @@ def main():
 			update_environment_variables()
 	elif mode == 'update' and submode == None:
 		update_EiffelStudio()
-		esvn.update_repository(v_url_svn_eve_src, v_dir_eve_source)
+		esvn.update_repository(config.v_url_svn_trunk_src, elocation.trunk_source())
 		compile_runtime()
 		compile_eve('bench')
 	elif mode == 'update' and (submode == 'EiffelStudio' or submode == 'es'):
 		update_EiffelStudio()
 	elif mode == 'update' and submode == 'source':
-		esvn.update_repository(v_url_svn_eve_src, v_dir_eve_source)
+		esvn.update_repository(config.v_url_svn_trunk_src, elocation.trunk_source())
 	elif mode == 'compile' and submode == 'runtime':
 		if not check_environment_variables():
 			update_environment_variables()
