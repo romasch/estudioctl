@@ -786,6 +786,12 @@ def update_environment_variables():
 	# TODO: update PATH contents
 	# Temporary path update for execution in same session
 	os.environ['PATH'] = os.path.join(os.getenv("ISE_EIFFEL"), 'studio', 'spec', os.getenv("ISE_PLATFORM"), 'bin') + os.pathsep + os.environ['PATH']
+	
+	if platform.system() != "Windows":
+            with open (os.path.join (elocation.base_directory(), 'scripts', 'nightly.unix.sh'), 'w') as l_file:
+                l_file.write ('export ISE_EIFFEL=')
+                l_file.write (path)
+                l_file.write ('\n')
 	return
 
 def set_persistent_environment_variable(varname, value):
