@@ -15,7 +15,7 @@ def execute(program, output_file = None, execution_directory = None):
 	"""
 		Execute 'program'.
 	"""
-	SystemLogger.debug("Executing " + ' '.join(program))
+	SystemLogger.info("Executing " + ' '.join(program))
 	if isinstance(output_file, str):
 		pipe = open(output_file, 'a')
 	else:
@@ -27,7 +27,7 @@ def execute(program, output_file = None, execution_directory = None):
 	proc.communicate()
 	if isinstance(output_file, str):
 		pipe.close()
-	SystemLogger.debug("Finished with code " + str(proc.returncode))
+	SystemLogger.info("Finished with code " + str(proc.returncode))
 	return proc.returncode
 
 

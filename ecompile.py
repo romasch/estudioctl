@@ -49,10 +49,11 @@ d_eve_shared_libs = [
 
 ################# Helper functions #####################
 
-def copy_files(src_glob, dst_folder):
-	SystemLogger.info("copying files from " + src_glob + " to " + dst_folder)
-	for fname in glob.iglob(src_glob):
-		dst_file = os.path.join(dst_folder, os.path.basename(fname))
+def copy_files(src_glob_raw, destination_folder_raw):
+	SystemLogger.info("copying files from " + src_glob_raw + " to " + destination_folder_raw)
+	expanded_folder = os.path.expandvars (destination_folder_raw)
+	for fname in glob.iglob(os.path.expandvars (src_glob_raw)):
+		dst_file = os.path.join(expanded_folder, os.path.basename(fname))
 		SystemLogger.debug ("copying file from " + fname + " to " + dst_file)
 		shutil.copy(fname, dst_file)
 
@@ -94,11 +95,11 @@ def compile_runtime():
 		run_command (["premake4", "gmake"], sourcedir)
 		run_command (["make"], builddir)
 
-		copy_files (os.path.join (sourcedir, "config.sh"), os.path.expandvars (d_target_includedir_raw))
+		copy_files (os.path.join (sourcedir, "config.sh"), d_target_includedir_raw)
 
 		# Copy public header files and all run-times.
-	copy_files (os.path.expandvars (os.path.join (sourcedir, "run-time", "*.h")), os.path.expandvars (d_target_includedir_raw))
-	copy_files (os.path.expandvars (os.path.join (builddir, "spec", "lib", "*.*")), os.path.expandvars (d_target_libdir_raw))
+	copy_files (os.path.join (sourcedir, "run-time", "*.h"), d_target_includedir_raw)
+	copy_files (os.path.join (builddir, "spec", "lib", "*.*"), d_target_libdir_raw)
 	
 
 		# Compile the various C support libraries needed by Eiffel libraries.

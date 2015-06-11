@@ -34,7 +34,7 @@ v_log_filename = "./log.txt"
 # 1: error/warning/success output
 # 2: info output
 # 3: log output
-v_verbose_level = 3
+v_verbose_level = 2
 
 
 # ----------------------------------------------------------------------------
