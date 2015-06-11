@@ -139,38 +139,26 @@ except NameError:
 # ----------------------------------------------------------------------------
 
 d_ise_platform = None
-d_runtime_flag = None
 d_ise_c_compiler = None
 d_archive_extension = None
 d_eve_exe_name = None
-d_compile_runtime_script = None
-d_copy_runtime_script = None
 
 if platform.system() == 'Windows':
 	if 'PROGRAMFILES(X86)' in os.environ:
 		d_ise_platform = 'win64'
-		d_runtime_flag = 'win64'
-		d_compile_runtime_script = "compile_es/windows/compile_ec_win64.bat"
 	else:
 		d_ise_platform = 'windows'
-		d_runtime_flag = 'win32'
-		d_compile_runtime_script = "compile_es/windows/compile_ec_win32.bat"
 	d_eve_exe_name = 'ec.exe'
 	d_ise_c_compiler = 'msc'
 	d_archive_extension = '7z'
-	d_copy_runtime_script = "compile_es/windows/copy_run_time.bat"
 elif platform.system() == 'Linux':
 	if platform.architecture()[0] == '64bit':
 		d_ise_platform = 'linux-x86-64'
-		d_runtime_flag = 'linux-x86-64'
 	else:
 		d_ise_platform = 'linux-x86'
-		d_runtime_flag = 'linux-x86'
 	d_eve_exe_name = 'ec'
 	d_ise_c_compiler = 'gcc'
 	d_archive_extension = 'tar.bz2'
-	d_compile_runtime_script = "compile_es/linux/compile_runtime.bat"
-	d_copy_runtime_script = "compile_es/linux/copy_runtime.bat"
 else:
 	SystemLogger.error("Platform " + platform.system() + " not supported")
 	sys.exit()
@@ -331,94 +319,9 @@ def get_installed_version():
 # compile run-time
 # ----------------------------------------------------------------------------
 
-def copy_files(src_glob, dst_folder):
-	SystemLogger.info("copying files from " + src_glob + " to " + dst_folder)
-	for fname in glob.iglob(src_glob):
-		dst_file = os.path.join(dst_folder, os.path.basename(fname))
-		SystemLogger.debug ("copying file from " + fname + " to " + dst_file)
-		shutil.copy(fname, dst_file)
-
-def execute_calls(calls):
-	for c in calls:
-		execute(c["cmd"], SystemLogger.get_file(), os.path.expandvars(c["cwd"]))
-
+#TODO: Get rid of this function.
 def compile_runtime():
-	global d_compile_runtime_script, d_copy_runtime_script
-	SystemLogger.info("Compiling runtime\nLocation: " + os.path.join("EIFFEL_SRC", "C"))
-	if platform.system() == 'Windows':
-		calls = [
-			{'cwd': os.path.join("$EIFFEL_SRC", "C"),
-			 'cmd': [os.path.expandvars(os.path.join("$EIFFEL_SRC", "C", "Configure.bat")), "clean"]},
-			{'cwd': os.path.join("$EIFFEL_SRC", "C"),
-			 'cmd': [os.path.expandvars(os.path.join("$EIFFEL_SRC", "C", "Configure.bat")), d_runtime_flag, "m"]},
-		]
-		execute_calls(calls)
-		copy_files(
-			os.path.expandvars(os.path.join("$EIFFEL_SRC", "C", "run-time", "*.h")),
-			os.path.expandvars(os.path.join("$ISE_EIFFEL", "studio", "spec", "$ISE_PLATFORM", "include")))
-		copy_files(
-			os.path.expandvars(os.path.join("$EIFFEL_SRC", "C", "run-time", "LIB", "*.*")),
-			os.path.expandvars(os.path.join("$ISE_EIFFEL", "studio", "spec", "$ISE_PLATFORM", "lib", "$ISE_C_COMPILER")))
-		calls = [
-			{'cwd': os.path.join("$EIFFEL_SRC", "library", "net", "Clib"),
-			 'cmd': ["compile_library.bat"]},
-			{'cwd': os.path.join("$EIFFEL_SRC", "library", "wel", "Clib"),
-			 'cmd': ["compile_library.bat"]},
-			{'cwd': os.path.join("$EIFFEL_SRC", "library", "cURL", "Clib"),
-			 'cmd': ["compile_library.bat"]},
-			{'cwd': os.path.join("$EIFFEL_SRC", "library", "mysql", "Clib"),
-			 'cmd': ["compile_library.bat"]},
-			{'cwd': os.path.join("$EIFFEL_SRC", "library", "vision2", "Clib"),
-			 'cmd': ["compile_library.bat"]},
-			{'cwd': os.path.join("$EIFFEL_SRC", "library", "web_browser", "Clib"),
-			 'cmd': ["compile_library.bat"]},
-			{'cwd': os.path.join("$EIFFEL_SRC", "framework", "cli_writer", "Clib"),
-			 'cmd': ["compile_library.bat"]},
-			{'cwd': os.path.join("$EIFFEL_SRC", "framework", "cli_debugger", "Clib"),
-			 'cmd': ["compile_library.bat"]},
-			{'cwd': os.path.join("$EIFFEL_SRC", "framework", "auto_test", "Clib"),
-			 'cmd': ["compile_library.bat"]},
-			{'cwd': os.path.join("$EIFFEL_SRC", "C_library", "zlib"),
-			 'cmd': ["compile_library.bat"]},
-			{'cwd': os.path.join("$EIFFEL_SRC", "C_library", "libpng"),
-			 'cmd': ["compile_library.bat"]},
-		]
-		execute_calls(calls)
-	else:
-		calls = [
-			{'cwd': os.path.join("$EIFFEL_SRC", "C"),
-			 'cmd': ["make", "clobber"]},
-			{'cwd': os.path.join("$EIFFEL_SRC", "C"),
-			 'cmd': [os.path.expandvars(os.path.join("$EIFFEL_SRC", "C", "quick_configure"))]},
-		]
-		execute_calls(calls)
-		copy_files(
-			os.path.expandvars(os.path.join("$EIFFEL_SRC", "C", "run-time", "*.h")),
-			os.path.expandvars(os.path.join("$ISE_EIFFEL", "studio", "spec", "$ISE_PLATFORM", "include")))
-		copy_files(
-			os.path.expandvars(os.path.join("$EIFFEL_SRC", "C", "config.sh")),
-			os.path.expandvars(os.path.join("$ISE_EIFFEL", "studio", "spec", "$ISE_PLATFORM", "include")))
-		copy_files(
-			os.path.expandvars(os.path.join("$EIFFEL_SRC", "C", "run-time", "*.a")),
-			os.path.expandvars(os.path.join("$ISE_EIFFEL", "studio", "spec", "$ISE_PLATFORM", "lib")))
-		copy_files(
-			os.path.expandvars(os.path.join("$EIFFEL_SRC", "C", "run-time", "*.so")),
-			os.path.expandvars(os.path.join("$ISE_EIFFEL", "studio", "spec", "$ISE_PLATFORM", "lib")))
-		calls = [
-			{'cwd': os.path.join("$EIFFEL_SRC", "library", "net", "Clib"),
-			 'cmd': ["finish_freezing", "-library"]},
-			{'cwd': os.path.join("$EIFFEL_SRC", "library", "vision2", "implementation", "gtk", "Clib"),
-			 'cmd': ["finish_freezing", "-library"]},
-			{'cwd': os.path.join("$EIFFEL_SRC", "library", "cURL", "Clib"),
-			 'cmd': ["finish_freezing", "-library"]},
-			{'cwd': os.path.join("$EIFFEL_SRC", "library", "mysql", "Clib"),
-			 'cmd': ["finish_freezing", "-library"]},
-			{'cwd': os.path.join("$EIFFEL_SRC", "library", "vision2", "Clib"),
-			 'cmd': ["finish_freezing", "-library"]},
-			{'cwd': os.path.join("$EIFFEL_SRC", "framework", "auto_test", "Clib"),
-			 'cmd': ["finish_freezing", "-library"]},
-		]
-		execute_calls(calls)
+	ecompile.compile_runtime()
 
 def compile_eve(target):
 	SystemLogger.info("Compiling EVE")
@@ -870,7 +773,6 @@ def main():
 	elif mode == 'compile' and submode == 'runtime':
 		if not check_environment_variables():
 			update_environment_variables()
-		#compile_runtime()
 		ecompile.compile_runtime()
 	elif mode == 'compile' and (submode == None or submode == 'eve'):
 		if not check_environment_variables():
