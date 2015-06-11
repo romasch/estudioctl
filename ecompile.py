@@ -12,7 +12,6 @@ from elogger import SystemLogger
 
 d_target_directory_raw = os.path.expandvars (os.path.join ("$ISE_EIFFEL", "studio", "spec", "$ISE_PLATFORM"))
 d_target_includedir_raw = os.path.join (d_target_directory_raw, "include")
-print (d_target_includedir)
 d_target_libdir_raw = None
 d_compile_command = None
 d_platform_libs = None
