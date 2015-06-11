@@ -10,15 +10,16 @@ from elogger import SystemLogger
 
 ############## Platform specifics #####################
 
-d_target_directory = os.path.expandvars (os.path.join ("$ISE_EIFFEL", "studio", "spec", "$ISE_PLATFORM"))
-d_target_includedir = os.path.join (d_target_directory, "include")
-d_target_libdir = None
+d_target_directory_raw = os.path.expandvars (os.path.join ("$ISE_EIFFEL", "studio", "spec", "$ISE_PLATFORM"))
+d_target_includedir_raw = os.path.join (d_target_directory, "include")
+print (d_target_includedir)
+d_target_libdir_raw = None
 d_compile_command = None
 d_platform_libs = None
 d_windows_runtime_flag = None
 
 if platform.system() == 'Windows':
-	d_target_libdir = os.path.expandvars (os.path.join (d_target_directory, "lib", "$ISE_C_COMPILER"))
+	d_target_libdir_raw = os.path.expandvars (os.path.join (d_target_directory, "lib", "$ISE_C_COMPILER"))
 	d_compile_command = ["compile_library.bat"]
 	d_platform_libs = [
 		os.path.join("$EIFFEL_SRC", "library", "wel", "Clib"),
@@ -32,7 +33,7 @@ if platform.system() == 'Windows':
 	else:
 		d_windows_runtime_flag = 'win32'
 else:
-	d_target_libdir = os.path.join (d_target_directory, "lib")
+	d_target_libdir_raw = os.path.join (d_target_directory, "lib")
 	d_compile_command = ["finish_freezing", "-library"]
 	d_platform_libs =  [os.path.join("$EIFFEL_SRC", "library", "vision2", "implementation", "gtk", "Clib")]
 
@@ -69,7 +70,6 @@ def compile_runtime():
 	builddir = os.path.join (elocation.build(), "runtime")
 	sourcedir = os.path.join (elocation.trunk_source(), "C")
 	scriptdir = os.path.join (elocation.base_directory(),  "scripts")
-	nightlytargetdir = os.path.expandvars (os.path.join ("$ISE_EIFFEL", "studio", "spec", "$ISE_PLATFORM"))
 	
 	copy_files (os.path.join (scriptdir, "premake4.lua"), sourcedir)
 	
@@ -95,11 +95,11 @@ def compile_runtime():
 		run_command (["premake4", "gmake"], sourcedir)
 		run_command (["make"], builddir)
 
-		copy_files (os.path.join (sourcedir, "config.sh"), d_target_includedir)
+		copy_files (os.path.join (sourcedir, "config.sh"), os.path.expandvars (d_target_includedir_raw))
 
 		# Copy public header files and all run-times.
-	copy_files (os.path.expandvars (os.path.join (sourcedir, "run-time", "*.h")), d_target_includedir)
-	copy_files (os.path.expandvars (os.path.join (builddir, "spec", "lib", "*.*")), d_target_libdir)
+	copy_files (os.path.expandvars (os.path.join (sourcedir, "run-time", "*.h")), os.path.expandvars (d_target_includedir_raw))
+	copy_files (os.path.expandvars (os.path.join (builddir, "spec", "lib", "*.*")), os.path.expandvars (d_target_libdir_raw))
 	
 
 		# Compile the various C support libraries needed by Eiffel libraries.
