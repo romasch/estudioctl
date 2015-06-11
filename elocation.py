@@ -5,6 +5,7 @@ import shutil
 
 from elogger import SystemLogger
 
+
 def base_directory ():
 	"""The root directory to which all files are relative to."""
 	if config.v_base_directory_override != None:

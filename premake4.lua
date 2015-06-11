@@ -1,8 +1,8 @@
 solution "EiffelRunTime"
 	configurations { "debug", "release" }
 
-	location "build"
-	targetdir "build/spec/lib"
+	location "../../build/runtime"
+	targetdir "../../build/runtime/spec/lib"
 	language "C"
 	includedirs {".", "run-time", "run-time/include", "idrs", "ipc/app", "ipc/shared"}
 

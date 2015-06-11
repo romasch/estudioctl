@@ -125,6 +125,7 @@ from elogger import SystemLogger
 import esvn
 import elocation
 import eutils
+import ecompile
 
 # Make input a synonym of raw_input in Python 2
 try:
@@ -869,7 +870,8 @@ def main():
 	elif mode == 'compile' and submode == 'runtime':
 		if not check_environment_variables():
 			update_environment_variables()
-		compile_runtime()
+		#compile_runtime()
+		ecompile.compile_runtime()
 	elif mode == 'compile' and (submode == None or submode == 'eve'):
 		if not check_environment_variables():
 			update_environment_variables()
