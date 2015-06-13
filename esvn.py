@@ -23,6 +23,8 @@ except ImportError:
 	try:
 		if subprocess.call(['svn', 'help'], stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=subprocess.PIPE) == 0:
 			_has_cmdsvn = True
+				# We can only parse english output, so make sure we get it from SVN.
+			os.environ['LC_MESSAGES']='en'
 		else:
 			SystemLogger.error("pysvn module is not available. SVN command line not available. All SVN operations are disabled.")
 	except OSError:

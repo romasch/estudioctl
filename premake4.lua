@@ -111,7 +111,7 @@ local rt_console = {"console/argcargv.c", "console/econsole.c"}
 
 project "x2c"
 	kind "ConsoleApp"
-	targetdir "build/spec/bin"
+	targetdir "../../build/runtime/spec/bin"
 	files {"run-time/x2c.c", "run-time/offset.c"}
 
 project "wkbench_static"
