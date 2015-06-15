@@ -324,14 +324,17 @@ def compile_runtime():
 	ecompile.compile_runtime()
 
 
-def compile_eve(target):
-	ecf_path = os.path.join(v_dir_eve_source, "Eiffel", "Ace", "ec.ecf")
-	ecompile.compile_eiffel (ecf_path, target, "ec", False)
+def compile_eve(target, binary_name = 'ec'):
+	l_path = os.path.join ("$EIFFEL_SRC", "Eiffel", "Ace", "ec.ecf")
+	l_project = ecompile.EiffelProject (l_path, target, binary_name)
+	l_project.clean()
+	l_project.freeze()
 
-def finalize_eve(target):
-	ecf_path = os.path.join(v_dir_eve_source, "Eiffel", "Ace", "ec.ecf")
-	ecompile.compile_eiffel (ecf_path, target, "ec", True)
-
+def finalize_eve(target, binary_name = 'ec'):
+	l_path = os.path.join ("$EIFFEL_SRC", "Eiffel", "Ace", "ec.ecf")
+	l_project = ecompile.EiffelProject (l_path, target, binary_name)
+	l_project.clean()
+	l_project.finalize()
 
 def is_eve_compilation_successful(target, finalized = False):
 	success = False
@@ -742,15 +745,13 @@ def main():
 	elif mode == 'compile' and (submode == None or submode == 'eve'):
 		if not check_environment_variables():
 			update_environment_variables()
-		#TODO: The compiler needs libraries C/bench and C/platform...
 		#compile_eve('bench')
-		l_path = os.path.join ("$EIFFEL_SRC", "Eiffel", "Ace", "ec.ecf")
-		print (str(ecompile.compile_eiffel (l_path, 'batch', 'ecb')))
-		
+		compile_eve ('batch', 'ecb')
 	elif mode == 'finalize' and (submode == None or submode == 'eve'):
 		if not check_environment_variables():
 			update_environment_variables()
-		finalize_eve('bench')
+		#finalize_eve('bench')
+		finalize_eve ('batch', 'ecb')
 	elif mode == 'delivery':
 		if not check_environment_variables():
 			update_environment_variables()

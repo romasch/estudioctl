@@ -107,44 +107,67 @@ def compile_runtime():
 	compile_libraries (d_shared_libs)
 
 
-def to_platform_exe (name):
-	if platform.system() == 'Windows':
-		name = name + '.exe'
-	return name
+################# Eiffel compilation #################
 
-def compile_eiffel (ecf_path, target, binary_name, finalize=False):
-	result = False
-	SystemLogger.info("Compiling Eiffel program")
-	ec_path = os.path.expandvars (os.path.join ("$ISE_EIFFEL", "studio", "spec", "$ISE_PLATFORM", "bin", to_platform_exe('ec')))
-	ecf_path = os.path.expandvars (ecf_path)
-	project_path = os.path.dirname (ecf_path)
-	
-	SystemLogger.info("EiffelStudio: " + ec_path)
-	SystemLogger.info("ECF: " + ecf_path)
-	SystemLogger.info("Target: " + target)
-	SystemLogger.info("ISE_EIFFEL: " + os.environ['ISE_EIFFEL'])
-	SystemLogger.info("ISE_LIBRARY: " + os.environ['ISE_LIBRARY'])
-	SystemLogger.info("EIFFEL_SRC: " + os.environ['EIFFEL_SRC'])
-	SystemLogger.info("Finalize: " + str(finalize))
-	
-	if os.path.isfile (ecf_path):
-		elocation.delete(os.path.join (project_path, "EIFGENs", target))
-		command = [ec_path, '-config', ecf_path, '-target', target, '-batch', '-c_compile']
-		if finalize:
-			command = command + ['-finalize']
+def _append_exe (a_binary):
+	if platform.system() == 'Windows':
+		a_binary = a_binary + '.exe'
+	return a_binary
+
+class EiffelProject:
+	def __init__(self, ecf_path, target, binary_name):
+		self._project_path = os.path.dirname (os.path.realpath (os.path.expandvars (ecf_path)))
+		self._ecf = os.path.basename (ecf_path)
+		#self._ecf_path = ecf_path
+		self._target = target
+			# TODO: It would be great if we could just read the binary name from the ECF file...
+		self._binary = _append_exe(binary_name)
+		self._last_result = None
+
+	def clean (self):
+		l_path = os.path.join (self._project_path, "EIFGENs", self._target)
+		SystemLogger.info ("Cleaning Eiffel program at " + l_path)
+		elocation.delete (l_path)
+
+	def freeze (self):
+		SystemLogger.info ("Freezing Eiffel program.")
+		self._internal_compile ('W_code', [])
+		return self._last_result != None
+
+	def finalize (self):
+		SystemLogger.info ("Finalizing Eiffel program.")
+		self._internal_compile ('F_code', ['-finalize'])
+		return self._last_result != None
+
+	def last_result (self):
+		return self._last_result
+
+	def _internal_compile (self, X_code, additional_commands):
+		ec_path = os.path.expandvars (os.path.join ("$ISE_EIFFEL", "studio", "spec", "$ISE_PLATFORM", "bin", _append_exe('ec')))
+		ecf_path = os.path.join (self._project_path, self._ecf)
 		
-		code = eutils.execute (command, SystemLogger.get_file(), project_path)
+			# Print some information about the compilation step in the console.
+		SystemLogger.info("EiffelStudio: " + ec_path)
+		SystemLogger.info("ECF: " + ecf_path)
+		SystemLogger.info("Target: " + self._target)
+		SystemLogger.info("ISE_EIFFEL: " + os.environ['ISE_EIFFEL'])
+		SystemLogger.info("ISE_LIBRARY: " + os.environ['ISE_LIBRARY'])
+		SystemLogger.info("EIFFEL_SRC: " + os.environ['EIFFEL_SRC'])
 		
-		code_folder = 'W_code'
-		if finalize:
-			code_folder = 'F_code'
-		generated_binary = os.path.join (project_path, 'EIFGENs', target, code_folder, to_platform_exe (binary_name))
-		
-		if code == 0 and os.path.isfile (generated_binary):
-			SystemLogger.success ("Compilation of Eiffel project " + ecf_path + " (" + target + ") successful.")
-			result = True
+		if os.path.isfile (ecf_path):
+			
+				# Invoke the Eiffel compiler with the right arguments.
+			command = [ec_path, '-config', ecf_path, '-target', self._target, '-batch', '-c_compile'] + additional_commands
+			code = eutils.execute (command, SystemLogger.get_file(), self._project_path)
+			
+				# Check if the compilation was successful and store last_result.
+			generated_binary = os.path.join (self._project_path, 'EIFGENs', self._target, X_code, self._binary)
+			
+			if code == 0 and generated_binary != None and os.path.isfile (generated_binary):
+				self._last_result = generated_binary
+				SystemLogger.success ("Compilation of Eiffel project " + ecf_path + " (" + self._target + ") successful.")
+			else:
+				self._last_result = None
+				SystemLogger.error ("Compilation of Eiffel project " + ecf_path + " (" + self._target + ") failed.")
 		else:
-			SystemLogger.error ("Compilation of Eiffel project " + ecf_path + " (" + target + ") failed.")
-	else:
-		SystemLogger.error("ECF file '" + ecf_path + "' does not exist")
-	return result
+			SystemLogger.error("ECF file '" + ecf_path + "' does not exist")
