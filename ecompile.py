@@ -105,3 +105,46 @@ def compile_runtime():
 		# Compile the various C support libraries needed by Eiffel libraries.
 	compile_libraries (d_platform_libs)
 	compile_libraries (d_shared_libs)
+
+
+def to_platform_exe (name):
+	if platform.system() == 'Windows':
+		name = name + '.exe'
+	return name
+
+def compile_eiffel (ecf_path, target, binary_name, finalize=False):
+	result = False
+	SystemLogger.info("Compiling Eiffel program")
+	ec_path = os.path.expandvars (os.path.join ("$ISE_EIFFEL", "studio", "spec", "$ISE_PLATFORM", "bin", to_platform_exe('ec')))
+	ecf_path = os.path.expandvars (ecf_path)
+	project_path = os.path.dirname (ecf_path)
+	
+	SystemLogger.info("EiffelStudio: " + ec_path)
+	SystemLogger.info("ECF: " + ecf_path)
+	SystemLogger.info("Target: " + target)
+	SystemLogger.info("ISE_EIFFEL: " + os.environ['ISE_EIFFEL'])
+	SystemLogger.info("ISE_LIBRARY: " + os.environ['ISE_LIBRARY'])
+	SystemLogger.info("EIFFEL_SRC: " + os.environ['EIFFEL_SRC'])
+	SystemLogger.info("Finalize: " + str(finalize))
+	
+	if os.path.isfile (ecf_path):
+		elocation.delete(os.path.join (project_path, "EIFGENs", target))
+		command = [ec_path, '-config', ecf_path, '-target', target, '-batch', '-c_compile']
+		if finalize:
+			command = command + ['-finalize']
+		
+		code = eutils.execute (command, SystemLogger.get_file(), project_path)
+		
+		code_folder = 'W_code'
+		if finalize:
+			code_folder = 'F_code'
+		generated_binary = os.path.join (project_path, 'EIFGENs', target, code_folder, to_platform_exe (binary_name))
+		
+		if code == 0 and os.path.isfile (generated_binary):
+			SystemLogger.success ("Compilation of Eiffel project " + ecf_path + " (" + target + ") successful.")
+			result = True
+		else:
+			SystemLogger.error ("Compilation of Eiffel project " + ecf_path + " (" + target + ") failed.")
+	else:
+		SystemLogger.error("ECF file '" + ecf_path + "' does not exist")
+	return result

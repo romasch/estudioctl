@@ -323,93 +323,15 @@ def get_installed_version():
 def compile_runtime():
 	ecompile.compile_runtime()
 
-def to_platform_exe (name):
-	if platform.system() == 'Windows':
-		name = name + '.exe'
-	return name
-
-def compile_eiffel (ecf_path, target, binary_name, finalize=False):
-	result = False
-	SystemLogger.info("Compiling Eiffel program")
-	ec_path = os.path.expandvars (os.path.join ("$ISE_EIFFEL", "studio", "spec", "$ISE_PLATFORM", "bin", to_platform_exe('ec')))
-	ecf_path = os.path.expandvars (ecf_path)
-	project_path = os.path.dirname (ecf_path)
-	
-	SystemLogger.info("EiffelStudio: " + ec_path)
-	SystemLogger.info("ECF: " + ecf_path)
-	SystemLogger.info("Target: " + target)
-	SystemLogger.info("ISE_EIFFEL: " + os.environ['ISE_EIFFEL'])
-	SystemLogger.info("ISE_LIBRARY: " + os.environ['ISE_LIBRARY'])
-	SystemLogger.info("EIFFEL_SRC: " + os.environ['EIFFEL_SRC'])
-	SystemLogger.info("Finalize: " + str(finalize))
-	
-	if os.path.isfile (ecf_path):
-		elocation.delete(os.path.join (project_path, "EIFGENs", target))
-		command = [ec_path, '-config', ecf_path, '-target', target, '-batch', '-c_compile']
-		if finalize:
-			command = command + ['-finalize']
-		
-		code = eutils.execute (command, SystemLogger.get_file(), project_path)
-		
-		code_folder = 'W_code'
-		if finalize:
-			code_folder = 'F_code'
-		generated_binary = os.path.join (project_path, 'EIFGENs', target, code_folder, to_platform_exe (binary_name))
-		
-		if code == 0 and os.path.isfile (generated_binary):
-			SystemLogger.success ("Compilation of Eiffel project " + ecf_path + " (" + target + ") successful.")
-			result = True
-		else:
-			SystemLogger.error ("Compilation of Eiffel project " + ecf_path + " (" + target + ") failed.")
-	else:
-		SystemLogger.error("ECF file '" + ecf_path + "' does not exist")
-	return result
-
 
 def compile_eve(target):
-	SystemLogger.info("Compiling EVE")
-	ec_path = os.path.join(os.getenv("ISE_EIFFEL"), "studio", "spec", os.getenv("ISE_PLATFORM"), "bin", d_eve_exe_name)
-	project_path = os.path.realpath(os.path.join(v_dir_eve_source, "Eiffel", "Ace")) #TODO
-	ecf_path = os.path.join(project_path, "ec.ecf")
-	SystemLogger.info("EiffelStudio: " + ec_path)
-	SystemLogger.info("ECF: " + ecf_path)
-	SystemLogger.info("Target: " + target)
-	SystemLogger.info("ISE_EIFFEL: " + os.environ['ISE_EIFFEL'])
-	SystemLogger.info("ISE_LIBRARY: " + os.environ['ISE_LIBRARY'])
-	SystemLogger.info("EIFFEL_SRC: " + os.environ['EIFFEL_SRC'])
-	if os.path.isfile(ecf_path):
-		elocation.delete(os.path.join(project_path, "EIFGENs", target))
-		olddir = os.getcwd()
-		os.chdir(os.path.dirname(ecf_path))
-		code = execute([ec_path, "-config", ecf_path, "-target", target, "-c_compile", "-batch"], SystemLogger.get_file())
-		os.chdir(olddir)
-		if code == 0 and is_eve_compilation_successful(target):
-			SystemLogger.success("Compilation of EVE (" + target + ") successful")
-		else:
-			SystemLogger.error("Compilation of EVE (" + target + ") failed")
-	else:
-		SystemLogger.error("ECF file '" + ecf_path + "' does not exist")
+	ecf_path = os.path.join(v_dir_eve_source, "Eiffel", "Ace", "ec.ecf")
+	ecompile.compile_eiffel (ecf_path, target, "ec", False)
 
 def finalize_eve(target):
-	SystemLogger.info("Finalizing EVE")
-	ec_path = os.path.join(os.getenv("ISE_EIFFEL"), "studio", "spec", os.getenv("ISE_PLATFORM"), "bin", d_eve_exe_name)
-	project_path = os.path.realpath(os.path.join(v_dir_eve_source, "Eiffel", "Ace")) #TODO
-	ecf_path = os.path.join(project_path, "ec.ecf")
-	SystemLogger.info("EiffelStudio: " + ec_path)
-	SystemLogger.info("ECF: " + ecf_path)
-	SystemLogger.info("Target: " + target)
-	if os.path.isfile(ecf_path):
-		elocation.delete(os.path.join(project_path, "EIFGENs"))
-		olddir = os.getcwd()
-		os.chdir(os.path.dirname(ecf_path))
-		code = execute([ec_path, "-config", ecf_path, "-target", target, "-c_compile", "-finalize", "-batch"], SystemLogger.get_file())
-		os.chdir(olddir)
-		if code == 0 and is_eve_compilation_successful(target, True):
-			SystemLogger.success("Finalization of EVE (" + target + ") successful")
-		else:
-			SystemLogger.error("Finalization of EVE (" + target + ") failed")
-	else:
-		SystemLogger.error("ECF file '" + ecf_path + "' does not exist")
+	ecf_path = os.path.join(v_dir_eve_source, "Eiffel", "Ace", "ec.ecf")
+	ecompile.compile_eiffel (ecf_path, target, "ec", True)
+
 
 def is_eve_compilation_successful(target, finalized = False):
 	success = False
@@ -823,7 +745,7 @@ def main():
 		#TODO: The compiler needs libraries C/bench and C/platform...
 		#compile_eve('bench')
 		l_path = os.path.join ("$EIFFEL_SRC", "Eiffel", "Ace", "ec.ecf")
-		print (str(compile_eiffel (l_path, 'batch', 'ecb')))
+		print (str(ecompile.compile_eiffel (l_path, 'batch', 'ecb')))
 		
 	elif mode == 'finalize' and (submode == None or submode == 'eve'):
 		if not check_environment_variables():
