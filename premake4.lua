@@ -202,20 +202,20 @@ project "platform"
 	
 project "compiler"
 	kind "StaticLib"
-	files {"compiler/*.c"}
+	files {"bench/*.c"}
 		-- The compiler library location is hardcoded in some other scripts...
 	targetdir "bench"
 
 project "wcompiler"
 	kind "StaticLib"
-	files {"compiler/*.c"}
+	files {"bench/*.c"}
 	defines {"WORKBENCH"}
 		-- The compiler library location is hardcoded in some other scripts...
 	targetdir "bench"
 
 project "mtcompiler"
 	kind "StaticLib"
-	files {"compiler/*.c"}
+	files {"bench/*.c"}
 	defines {"EIF_THREADS"}
 		-- The compiler library location is hardcoded in some other scripts...
 	targetdir "bench"
@@ -226,7 +226,7 @@ project "mtcompiler"
 
 project "mtwcompiler"
 	kind "StaticLib"
-	files {"compiler/*.c"}
+	files {"bench/*.c"}
 	defines {"WORKBENCH", "EIF_THREADS"}
 		-- The compiler library location is hardcoded in some other scripts...
 	targetdir "bench"

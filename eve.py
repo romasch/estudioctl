@@ -354,7 +354,7 @@ def compile_eiffel (ecf_path, target, binary_name, finalize=False):
 		code_folder = 'W_code'
 		if finalize:
 			code_folder = 'F_code'
-		generated_binary = os.path.join (project_path, 'EIFGENs', code_folder, to_platform_exe (binary_name))
+		generated_binary = os.path.join (project_path, 'EIFGENs', target, code_folder, to_platform_exe (binary_name))
 		
 		if code == 0 and os.path.isfile (generated_binary):
 			SystemLogger.success ("Compilation of Eiffel project " + ecf_path + " (" + target + ") successful.")
