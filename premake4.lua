@@ -193,3 +193,44 @@ project "mtfinalized_shared"
 		links {"pthread"}
 	configuration "Windows"
 		files (rt_console)
+
+project "platform"
+	kind "StaticLib"
+	files {"platform/*.c"}
+		-- The platform library location is hardcoded in some other scripts...
+	targetdir "platform"
+	
+project "compiler"
+	kind "StaticLib"
+	files {"compiler/*.c"}
+		-- The compiler library location is hardcoded in some other scripts...
+	targetdir "bench"
+
+project "wcompiler"
+	kind "StaticLib"
+	files {"compiler/*.c"}
+	defines {"WORKBENCH"}
+		-- The compiler library location is hardcoded in some other scripts...
+	targetdir "bench"
+
+project "mtcompiler"
+	kind "StaticLib"
+	files {"compiler/*.c"}
+	defines {"EIF_THREADS"}
+		-- The compiler library location is hardcoded in some other scripts...
+	targetdir "bench"
+	configuration "not Windows"
+		defines "EIF_LINUXTHREADS"
+		links {"pthread"}
+		-- TODO: Windows
+
+project "mtwcompiler"
+	kind "StaticLib"
+	files {"compiler/*.c"}
+	defines {"WORKBENCH", "EIF_THREADS"}
+		-- The compiler library location is hardcoded in some other scripts...
+	targetdir "bench"
+	configuration "not Windows"
+		defines "EIF_LINUXTHREADS"
+		links {"pthread"}
+		-- TODO: Windows
