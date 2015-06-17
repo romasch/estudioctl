@@ -42,6 +42,7 @@ v_verbose_level = 2
 # ----------------------------------------------------------------------------
 
 import platform
+import os
 
 d_ise_platform = None
 d_runtime_flag = None

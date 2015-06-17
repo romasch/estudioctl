@@ -48,7 +48,7 @@ _svn = None
 if _has_pysvn:
 	svn = pysvn.Client()
 	svn.callback_get_login = svn_get_login
-	svn.callback_ssl_server_trust_prompt = svn_ssl_server_trust_prompt
+	svn.callback_ssl_server_trust_prompt = ssl_server_trust_prompt
 	svn.callback_notify = svn_notify
 
 def info_remote_url(path):
