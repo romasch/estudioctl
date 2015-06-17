@@ -1,3 +1,5 @@
+require "config"
+
 solution "EiffelRunTime"
 	configurations { "debug", "release" }
 

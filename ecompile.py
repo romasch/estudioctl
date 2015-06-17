@@ -73,10 +73,19 @@ def compile_runtime():
 	builddir = os.path.join (elocation.build(), "runtime")
 	sourcedir = os.path.join (elocation.trunk_source(), "C")
 	scriptdir = os.path.join (elocation.base_directory(),  "scripts")
-	
-	copy_files (os.path.join (scriptdir, "premake4.lua"), sourcedir)
-	
 	shell_command = os.path.expandvars (d_shell_command_raw)
+	
+		# TODO: Incremental compilation.
+	
+	copy_files (os.path.join (scriptdir, "*lua*"), sourcedir)
+	elocation.delete (os.path.join (sourcedir, "config.sh"))
+	elocation.copy (os.path.expandvars (os.path.join (sourcedir, "CONFIGS", "$ISE_PLATFORM")), os.path.join (sourcedir, "config.sh"))
+	run_command ([shell_command, "config_lua.SH"], sourcedir)
+	run_command ([shell_command, "eif_config_h.SH"], sourcedir)
+	run_command ([shell_command, "eif_size_h.SH"], os.path.join (sourcedir, "run-time"))
+	copy_files (os.path.join (sourcedir, "*.h"), os.path.join (sourcedir, "run-time"))
+	
+	
 	
 	if platform.system() == 'Windows':
 		# Shell and Nmake based build system:
@@ -94,14 +103,6 @@ def compile_runtime():
 		
 		
 		# Premake based build system:
-		# TODO: Don't call the first three commands for incremental compilation.
-		elocation.delete (os.path.join (sourcedir, "config.sh"))
-		elocation.copy (os.path.expandvars (os.path.join (sourcedir, "CONFIGS", "$ISE_PLATFORM")), os.path.join (sourcedir, "config.sh"))
-		run_command ([shell_command, "eif_config_h.SH"], sourcedir)
-		run_command ([shell_command, "eif_size_h.SH"], os.path.join (sourcedir, "run-time"))
-		copy_files (os.path.join (sourcedir, "*.h"), os.path.join (sourcedir, "run-time"))
-		
-		
 		if os.path.exists (os.path.join (builddir, "Makefile")):
 			run_command (["make", "clean"], builddir)
 		run_command (["premake4", "gmake"], sourcedir)
