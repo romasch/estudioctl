@@ -7,12 +7,9 @@ solution "EiffelRunTime"
 	targetdir "../../build/runtime/spec/lib"
 	language "C"
 	includedirs {".", "run-time", "run-time/include", "idrs", "ipc/app", "ipc/shared"}
+	
+	buildoptions (warning_level)
 
-	configuration "not Windows"
-		buildoptions {"-Wall -Wextra -Wno-unused-parameter -Wno-long-long -pedantic",
-			"-std=gnu99", "-pipe", "-fPIC", "-m64"}
-		defines "_GNU_SOURCE"
-		links {"m"}
 	configuration "Windows"
 		includedirs {"console"}
 		buildoptions {"-W4 -wd4055 -wd4054 -wd4100 -wd4702 -wd4706 -wd4510 -wd4512 -wd4610",
@@ -29,7 +26,7 @@ solution "EiffelRunTime"
 	-- All of these settings will appear in the Release configuration
 -- 	filter "configurations:Release"
 	configuration "release"
-		flags "Optimize"
+		buildoptions (optimize)
 
 local rt_base = {
 	"run-time/malloc.c",
@@ -114,12 +111,16 @@ local rt_console = {"console/argcargv.c", "console/econsole.c"}
 project "x2c"
 	kind "ConsoleApp"
 	targetdir "../../build/runtime/spec/bin"
+	buildoptions (ccflags)
+	linkoptions (ldccflags)
 	files {"run-time/x2c.c", "run-time/offset.c"}
 
 project "wkbench_static"
 	kind "StaticLib"
 	targetname "wkbench"
 	defines "WORKBENCH"
+	buildoptions (ccflags)
+	linkoptions (ldflags)
 	files (rt_base)
 	files (rt_workbench)
 	configuration "Windows"
@@ -129,6 +130,8 @@ project "wkbench_shared"
 	kind "SharedLib"
 	targetname "wkbench"
 	defines "WORKBENCH"
+	buildoptions (ccflags)
+	linkoptions (ldsharedflags)
 	files (rt_base)
 	files (rt_workbench)
 	configuration "Windows"
@@ -137,7 +140,9 @@ project "wkbench_shared"
 project "mtwkbench_static"
 	kind "StaticLib"
 	targetname "mtwkbench"
-	defines {"WORKBENCH", "EIF_THREADS"}
+	defines {"WORKBENCH"}
+	buildoptions (mtccflags)
+	linkoptions (mtldflags)
 	files (rt_base)
 	files (rt_workbench)
 	files (rt_multithreaded)
@@ -145,11 +150,13 @@ project "mtwkbench_static"
 		defines "EIF_LINUXTHREADS"
 	configuration "Windows"
 		files (rt_console)
-
+--TODO
 project "mtwkbench_shared"
 	kind "SharedLib"
 	targetname "mtwkbench"
-	defines {"WORKBENCH", "EIF_THREADS"}
+	defines {"WORKBENCH"}
+	buildoptions (mtccflags)
+	linkoptions (mtldsharedflags)
 	files (rt_base)
 	files (rt_workbench)
 	files (rt_multithreaded)
@@ -162,6 +169,8 @@ project "mtwkbench_shared"
 project "finalized_static"
 	kind "StaticLib"
 	targetname "finalized"
+	buildoptions (ccflags)
+	linkoptions (ldflags)
 	files (rt_base)
 	configuration "Windows"
 		files (rt_console)
@@ -169,6 +178,8 @@ project "finalized_static"
 project "finalized_shared"
 	kind "SharedLib"
 	targetname "finalized"
+	buildoptions (ccflags)
+	linkoptions (ldsharedflags)
 	files (rt_base)
 	configuration "Windows"
 		files (rt_console)
@@ -176,63 +187,61 @@ project "finalized_shared"
 project "mtfinalized_static"
 	kind "StaticLib"
 	targetname "mtfinalized"
-	defines {"EIF_THREADS"}
+	buildoptions (mtccflags)
+	linkoptions (mtldflags)
 	files (rt_base)
 	files (rt_multithreaded)
-	configuration "not Windows"
-		defines "EIF_LINUXTHREADS"
 	configuration "Windows"
 		files (rt_console)
 
 project "mtfinalized_shared"
 	kind "SharedLib"
 	targetname "mtfinalized"
-	defines {"EIF_THREADS"}
+	buildoptions (mtccflags)
+	linkoptions (mtldsharedflags)
 	files (rt_base)
 	files (rt_multithreaded)
-	configuration "not Windows"
-		defines "EIF_LINUXTHREADS"
-		links {"pthread"}
 	configuration "Windows"
 		files (rt_console)
 
 project "platform"
 	kind "StaticLib"
+	buildoptions (ccflags)
+	linkoptions (ldflags)
 	files {"platform/*.c"}
 		-- The platform library location is hardcoded in some other scripts...
 	targetdir "platform"
 	
 project "compiler"
 	kind "StaticLib"
+	buildoptions (ccflags)
+	linkoptions (ldflags)
 	files {"bench/*.c"}
 		-- The compiler library location is hardcoded in some other scripts...
 	targetdir "bench"
 
 project "wcompiler"
 	kind "StaticLib"
-	files {"bench/*.c"}
+	buildoptions (ccflags)
+	linkoptions (ldflags)
 	defines {"WORKBENCH"}
+	files {"bench/*.c"}
 		-- The compiler library location is hardcoded in some other scripts...
 	targetdir "bench"
 
 project "mtcompiler"
 	kind "StaticLib"
+	buildoptions (mtccflags)
+	linkoptions (mtldflags)
 	files {"bench/*.c"}
-	defines {"EIF_THREADS"}
 		-- The compiler library location is hardcoded in some other scripts...
 	targetdir "bench"
-	configuration "not Windows"
-		defines "EIF_LINUXTHREADS"
-		links {"pthread"}
-		-- TODO: Windows
 
 project "mtwcompiler"
 	kind "StaticLib"
+	buildoptions (mtccflags)
+	linkoptions (mtldflags)
+	defines {"WORKBENCH"}
 	files {"bench/*.c"}
-	defines {"WORKBENCH", "EIF_THREADS"}
 		-- The compiler library location is hardcoded in some other scripts...
 	targetdir "bench"
-	configuration "not Windows"
-		defines "EIF_LINUXTHREADS"
-		links {"pthread"}
-		-- TODO: Windows

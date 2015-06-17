@@ -60,6 +60,17 @@ def copy_files(src_glob_raw, destination_folder_raw):
 		SystemLogger.debug ("copying file from " + fname + " to " + dst_file)
 		shutil.copy(fname, dst_file)
 
+def fix_makefiles (src_glob_raw, link_command):
+	for orig in glob.iglob(os.path.expandvars (src_glob_raw)):
+		SystemLogger.info ("Fixing makefile: " + orig)
+		fixed = orig + ".tmp"
+		with open (fixed, 'w') as fixed_file:
+			with open (orig) as orig_file:
+				for line in orig_file:
+					fixed_file.write (line.replace ('LINKCMD    = $(CC)', 'LINKCMD    = ' + link_command))
+		elocation.delete (orig)
+		elocation.move (fixed, orig)
+
 def run_command (command, directory):
 	eutils.execute (command, SystemLogger.get_file(), os.path.expandvars (directory))
 
@@ -106,7 +117,9 @@ def compile_runtime():
 		if os.path.exists (os.path.join (builddir, "Makefile")):
 			run_command (["make", "clean"], builddir)
 		run_command (["premake4", "gmake"], sourcedir)
-		run_command (["make"], builddir)
+		 #TODO: Get the correct link_command from config.sh (shared_link variable)
+		fix_makefiles (os.path.join (builddir, "*_shared.make"), 'ld')
+		run_command (["make", "verbose=y", "config=release"], builddir)
 
 		copy_files (os.path.join (sourcedir, "config.sh"), d_target_includedir_raw)
 
