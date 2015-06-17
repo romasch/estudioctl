@@ -146,11 +146,9 @@ project "mtwkbench_static"
 	files (rt_base)
 	files (rt_workbench)
 	files (rt_multithreaded)
-	configuration "not Windows"
-		defines "EIF_LINUXTHREADS"
 	configuration "Windows"
 		files (rt_console)
---TODO
+
 project "mtwkbench_shared"
 	kind "SharedLib"
 	targetname "mtwkbench"
@@ -160,9 +158,6 @@ project "mtwkbench_shared"
 	files (rt_base)
 	files (rt_workbench)
 	files (rt_multithreaded)
-	configuration "not Windows"
-		defines "EIF_LINUXTHREADS"
-		links {"pthread"}
 	configuration "Windows"
 		files (rt_console)
 

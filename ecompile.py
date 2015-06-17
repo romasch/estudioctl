@@ -117,9 +117,12 @@ def compile_runtime():
 		if os.path.exists (os.path.join (builddir, "Makefile")):
 			run_command (["make", "clean"], builddir)
 		run_command (["premake4", "gmake"], sourcedir)
-		 #TODO: Get the correct link_command from config.sh (shared_link variable)
+		 #TODO: Get the correct link_command from config.sh (sharedlink Bash variable)
 		fix_makefiles (os.path.join (builddir, "*_shared.make"), 'ld')
-		run_command (["make", "verbose=y", "config=release"], builddir)
+		make_command = ["make"]
+		#make_command = make_command + ["config=release"] # Release
+		#make_command = make_command + ["verbose=y"] # Verbose output
+		run_command (make_command, builddir)
 
 		copy_files (os.path.join (sourcedir, "config.sh"), d_target_includedir_raw)
 
