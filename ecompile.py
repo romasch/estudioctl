@@ -14,12 +14,14 @@ d_target_directory_raw = os.path.expandvars (os.path.join ("$ISE_EIFFEL", "studi
 d_target_includedir_raw = os.path.join (d_target_directory_raw, "include")
 d_target_libdir_raw = None
 d_compile_command = None
+d_shell_command_raw = None
 d_platform_libs = None
 d_windows_runtime_flag = None
 
 if platform.system() == 'Windows':
 	d_target_libdir_raw = os.path.expandvars (os.path.join (d_target_directory_raw, "lib", "$ISE_C_COMPILER"))
 	d_compile_command = ["compile_library.bat"]
+	d_shell_command_raw = os.path.join ("$EIFFEL_SRC", "C", "shell", "bin", "sh.exe")
 	d_platform_libs = [
 		os.path.join("$EIFFEL_SRC", "library", "wel", "Clib"),
 		os.path.join("$EIFFEL_SRC", "library", "web_browser", "Clib"),
@@ -34,6 +36,7 @@ if platform.system() == 'Windows':
 else:
 	d_target_libdir_raw = os.path.join (d_target_directory_raw, "lib")
 	d_compile_command = ["finish_freezing", "-library"]
+	d_shell_command_raw = "bash"
 	d_platform_libs =  [os.path.join("$EIFFEL_SRC", "library", "vision2", "implementation", "gtk", "Clib")]
 
 d_shared_libs = [
@@ -73,6 +76,8 @@ def compile_runtime():
 	
 	copy_files (os.path.join (scriptdir, "premake4.lua"), sourcedir)
 	
+	shell_command = os.path.expandvars (d_shell_command_raw)
+	
 	if platform.system() == 'Windows':
 		# Shell and Nmake based build system:
 		# run_command ([os.path.join(sourcedir, "Configure.bat"), "clean"], sourcedir)
@@ -87,11 +92,18 @@ def compile_runtime():
 #		run_command (["make", "clobber"], sourcedir)
 #		run_command (["./quick_configure"], sourcedir)
 		
+		
 		# Premake based build system:
 		# TODO: Don't call the first three commands for incremental compilation.
+		elocation.delete (os.path.join (sourcedir, "config.sh"))
+		elocation.copy (os.path.expandvars (os.path.join (sourcedir, "CONFIGS", "$ISE_PLATFORM")), os.path.join (sourcedir, "config.sh"))
+		run_command ([shell_command, "eif_config_h.SH"], sourcedir)
+		run_command ([shell_command, "eif_size_h.SH"], os.path.join (sourcedir, "run-time"))
+		copy_files (os.path.join (sourcedir, "*.h"), os.path.join (sourcedir, "run-time"))
+		
+		
 		if os.path.exists (os.path.join (builddir, "Makefile")):
 			run_command (["make", "clean"], builddir)
-		run_command (["./runtime.unix.sh"], scriptdir)
 		run_command (["premake4", "gmake"], sourcedir)
 		run_command (["make"], builddir)
 
