@@ -82,6 +82,7 @@ def compile_libraries (libs):
 
 def compile_runtime():
 	builddir = os.path.join (elocation.build(), "runtime")
+	build_libdir = None
 	sourcedir = os.path.join (elocation.trunk_source(), "C")
 	scriptdir = os.path.join (elocation.base_directory(),  "scripts")
 	shell_command = os.path.expandvars (d_shell_command_raw)
@@ -90,27 +91,42 @@ def compile_runtime():
 	
 	copy_files (os.path.join (scriptdir, "*lua*"), sourcedir)
 	elocation.delete (os.path.join (sourcedir, "config.sh"))
-	elocation.copy (os.path.expandvars (os.path.join (sourcedir, "CONFIGS", "$ISE_PLATFORM")), os.path.join (sourcedir, "config.sh"))
+	
+	config_sh = os.environ ["ISE_PLATFORM"]
+	old_path = os.environ ["PATH"]
+	
+	if config_sh == 'win64':
+		os.environ ["PATH"] = os.path.dirname (shell_command) + ':' + old_path
+		config_sh = 'windows-x86-64-' + os.environ ['ISE_C_COMPILER']
+	if config_sh == 'win32':
+		os.environ ["PATH"] = dirname (shell_command) + ':' + old_path
+		config_sh = 'windows-x86-' + os.environ ['ISE_C_COMPILER']
+	
+	elocation.copy (os.path.expandvars (os.path.join (sourcedir, "CONFIGS", config_sh)), os.path.join (sourcedir, "config.sh"))
 	run_command ([shell_command, "config_lua.SH"], sourcedir)
 	run_command ([shell_command, "eif_config_h.SH"], sourcedir)
 	run_command ([shell_command, "eif_size_h.SH"], os.path.join (sourcedir, "run-time"))
 	copy_files (os.path.join (sourcedir, "*.h"), os.path.join (sourcedir, "run-time"))
 	
-	
+	os.environ ['PATH'] = old_path
 	
 	if platform.system() == 'Windows':
 		# Shell and Nmake based build system:
-		# run_command ([os.path.join(sourcedir, "Configure.bat"), "clean"], sourcedir)
-		# run_command ([os.path.join(sourcedir, "Configure.bat"), d_windows_runtime_flag, 'm'], sourcedir)
+		run_command ([os.path.join(sourcedir, "Configure.bat"), "clean"], sourcedir)
+		run_command ([os.path.join(sourcedir, "Configure.bat"), d_windows_runtime_flag, 'm'], sourcedir)
+		build_libdir = os.path.join (sourcedir, 'run-time', 'LIB')
 		
 		# Premake based build system:
-
-		print ("Not yet implemented")
+		# run_command ([os.path.join (sourcedir, 'premake4.exe'), "vs2010"], sourcedir)
+		# run_command (['msbuild.exe', 'EiffelRunTime.sln', '/upgrade'], builddir)
+		# run_command (["msbuild.exe", "EiffelRunTime.sln"], builddir)
+		# build_libdir = os.path.join (builddir, 'spec', 'lib')
 	else:
 		# Shell and make based build system:
 		# TODO: This is currently broken because the libraries are generated at a wrong place.
 #		run_command (["make", "clobber"], sourcedir)
 #		run_command (["./quick_configure"], sourcedir)
+#		build_libdir = os.path.join (sourcedir, 'run-time')
 		
 		
 		# Premake based build system:
@@ -125,10 +141,12 @@ def compile_runtime():
 		run_command (make_command, builddir)
 
 		copy_files (os.path.join (sourcedir, "config.sh"), d_target_includedir_raw)
+		build_libdir = os.path.join (builddir, "spec", "lib")
 
 		# Copy public header files and all run-times.
 	copy_files (os.path.join (sourcedir, "run-time", "*.h"), d_target_includedir_raw)
-	copy_files (os.path.join (builddir, "spec", "lib", "*.*"), d_target_libdir_raw)
+	copy_files (os.path.join (build_libdir, "*finalized.*"), d_target_libdir_raw)
+	copy_files (os.path.join (build_libdir, "*wkbench.*"), d_target_libdir_raw)
 	
 
 		# Compile the various C support libraries needed by Eiffel libraries.
