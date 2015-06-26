@@ -28,10 +28,14 @@ solution "EiffelRunTime"
 	configuration "release"
 		buildoptions (optimize)
 
+-- TODO: The build for workbench libraries is broken, because a new file "stack.c" has been added.
+-- A possible fix might be to add a symlink ipc_stack.c -> stack.c, and exclude the original file from the build.
+
 local rt_base = {
 	"run-time/malloc.c",
 	"run-time/garcol.c",
 	"run-time/local.c",
+	"run-time/stack.c",
 	"run-time/store.c",
 	"run-time/retrieve.c",
 	"run-time/hash.c",
