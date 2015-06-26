@@ -126,6 +126,7 @@ import esvn
 import elocation
 import eutils
 import ecompile
+import eweasel
 
 # Make input a synonym of raw_input in Python 2
 try:
@@ -611,6 +612,15 @@ def check_environment_variables():
 		result = False
 	else:
 		SystemLogger.debug("EIFFEL_SRC = " + os.getenv("EIFFEL_SRC"))
+	# EWEASEL
+	if not "EWEASEL" in os.environ:
+		SystemLogger.error("Environment variable EWEASEL not set. EVE compilation not possible")
+		result = False
+	elif not os.path.isdir(os.getenv("EWEASEL")):
+		SystemLogger.error("Path from environment variable EWEASEL (" + os.getenv("EWEASEL") + ") does not exist")
+		result = False
+	else:
+		SystemLogger.debug("EWEASEL = " + os.getenv("EWEASEL"))
 	# ISE_LIBRARY
 	if not "ISE_LIBRARY" in os.environ:
 		SystemLogger.error("Environment variable ISE_LIBRARY not set. EVE compilation not possible")
@@ -641,8 +651,8 @@ def update_environment_variables():
 		SystemLogger.debug ("WARNING: No nightly build available. Using ISE_EIFFEL = " + os.getenv("ISE_EIFFEL"))
 	elif not "ISE_EIFFEL" in os.environ or os.getenv("ISE_EIFFEL") != path:
 		set_persistent_environment_variable("ISE_EIFFEL", path)
-	else:
-		raise Exception ("Could not set ISE_EIFFEL environment variable.")
+#	else:
+#		raise Exception ("Could not set ISE_EIFFEL environment variable.")
 	# ISE_C_COMPILER
 	if not "ISE_C_COMPILER" in os.environ or os.getenv("ISE_C_COMPILER") != d_ise_c_compiler:
 		set_persistent_environment_variable("ISE_C_COMPILER", d_ise_c_compiler)
@@ -650,6 +660,9 @@ def update_environment_variables():
 	eiffel_source = os.path.realpath(elocation.trunk_source())
 	if not "EIFFEL_SRC" in os.environ or os.getenv("EIFFEL_SRC") != eiffel_source:
 		set_persistent_environment_variable("EIFFEL_SRC", eiffel_source)
+	# EWEASEL
+	if not "EWEASEL" in os.environ or os.getenv("EWEASEL") != elocation.eweasel():
+		set_persistent_environment_variable("EWEASEL", elocation.eweasel())
 	# ISE_LIBRARY
 	eiffel_source = os.path.realpath(elocation.trunk_source())
 	if not "ISE_LIBRARY" in os.environ or os.getenv("ISE_LIBRARY") != eiffel_source:
@@ -758,6 +771,10 @@ def main():
 		make_delivery()
 	elif mode == 'merge':
 		make_merge()
+	elif mode == 'eweasel' and submode == 'install':
+		if not check_environment_variables():
+			update_environment_variables()
+		eweasel.install()
 	else:
 		if submode == None:
 			SystemLogger.error("invalid option " + mode)

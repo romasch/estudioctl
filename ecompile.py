@@ -147,6 +147,8 @@ def compile_runtime():
 
 		# Copy public header files and all run-times.
 	copy_files (os.path.join (sourcedir, "run-time", "*.h"), d_target_includedir_raw)
+	copy_files (os.path.join (sourcedir, "run-time", "eif_stack.decl"), d_target_includedir_raw)
+	copy_files (os.path.join (sourcedir, "run-time", "eif_stack.interface"), d_target_includedir_raw)
 	copy_files (os.path.join (build_libdir, "*finalized.*"), d_target_libdir_raw)
 	copy_files (os.path.join (build_libdir, "*wkbench.*"), d_target_libdir_raw)
 	
@@ -177,6 +179,10 @@ class EiffelProject:
 		l_path = os.path.join (self._project_path, "EIFGENs", self._target)
 		SystemLogger.info ("Cleaning Eiffel program at " + l_path)
 		elocation.delete (l_path)
+		l_path = os.path.dirname (l_path)
+		if os.listdir (l_path) == []:
+			elocation.delete (l_path)
+		
 
 	def freeze (self):
 		SystemLogger.info ("Freezing Eiffel program.")
