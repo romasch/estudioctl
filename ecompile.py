@@ -114,6 +114,8 @@ def compile_runtime():
 		# Shell and Nmake based build system:
 		run_command ([os.path.join(sourcedir, "Configure.bat"), "clean"], sourcedir)
 		run_command ([os.path.join(sourcedir, "Configure.bat"), d_windows_runtime_flag, 'm'], sourcedir)
+		l_config_location = os.path.expandvars (os.path.join("$ISE_EIFFEL", "studio", "config", "$ISE_PLATFORM", "$ISE_C_COMPILER"))
+		copy_files (os.path.join (sourcedir, "config.sh"), l_config_location)
 		build_libdir = os.path.join (sourcedir, 'run-time', 'LIB')
 		
 		# Premake based build system:
