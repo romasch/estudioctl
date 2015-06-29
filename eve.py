@@ -771,10 +771,13 @@ def main():
 		make_delivery()
 	elif mode == 'merge':
 		make_merge()
-	elif mode == 'eweasel' and submode == 'install':
+	elif mode == 'eweasel':
 		if not check_environment_variables():
 			update_environment_variables()
-		eweasel.install()
+		if submode == 'install':
+			eweasel.install()
+		elif submode == 'precompile':
+			eweasel.precompile ('base-scoop-safe')
 	else:
 		if submode == None:
 			SystemLogger.error("invalid option " + mode)

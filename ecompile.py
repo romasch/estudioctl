@@ -193,12 +193,19 @@ class EiffelProject:
 
 	def freeze (self):
 		SystemLogger.info ("Freezing Eiffel program.")
-		self._internal_compile ('W_code', [])
+		self._internal_compile ('W_code', ['-target', self._target,  '-c_compile'])
 		return self._last_result != None
 
 	def finalize (self):
 		SystemLogger.info ("Finalizing Eiffel program.")
-		self._internal_compile ('F_code', ['-finalize'])
+		self._internal_compile ('F_code', ['-target', self._target, '-finalize', '-c_compile'])
+		return self._last_result != None
+
+	def precompile (self):
+		SystemLogger.info ("Precompiling Eiffel library.")
+		assert self._ecf == (self._target + ".ecf"), "Target not equal to ECF file."
+		assert self._binary == _append_exe ("driver"), "Wrong binary file name."
+		self._internal_compile ('W_code', ['-clean', '-precompile', '-c_compile'])
 		return self._last_result != None
 
 	def last_result (self):
@@ -219,7 +226,7 @@ class EiffelProject:
 		if os.path.isfile (ecf_path):
 			
 				# Invoke the Eiffel compiler with the right arguments.
-			command = [ec_path, '-config', ecf_path, '-target', self._target, '-batch', '-c_compile'] + additional_commands
+			command = [ec_path, '-config', ecf_path, '-batch'] + additional_commands
 			code = eutils.execute (command, SystemLogger.get_file(), self._project_path)
 			
 				# Check if the compilation was successful and store last_result.

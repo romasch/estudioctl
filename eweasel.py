@@ -29,7 +29,19 @@ def install():
 		SystemLogger.warning ("Make sure that $EWEASEL/spec/$ISE_PLATFORM/bin is in your PATH variable!")
 	else:
 		SystemLogger.error ("Installation of eweasel failed.")
-
 	# TODO on Windows (see install_eweasel.bat): Convert a few test files to DOS format
 
-	
+
+def precompile (target = "all"):
+	if target == "all":
+		precompile ("base")
+		precompile ("base-safe")
+		precompile ("base-mt")
+		precompile ("base-scoop-safe")
+	else:
+		l_path = os.path.expandvars (os.path.join ("$ISE_EIFFEL", "precomp", "spec", "$ISE_PLATFORM", target + ".ecf"))
+		l_project = ecompile.EiffelProject (l_path, target, "driver")
+		if l_project.precompile():
+			SystemLogger.success ("Precompilation of " + target + " successful.")
+		else:
+			SystemLogger.error ("Precompilation of " + target + " failed.")
