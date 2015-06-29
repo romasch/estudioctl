@@ -75,27 +75,39 @@ def _set_eweasel_env():
 	l_command = l_command + ['-output', elocation.eweasel_build()]
 	return l_command
 
-def run (catalog = None, keep_all=False):
+def _prepare_catalog (catalog=None):
+	if catalog == None:
+		catalog = os.path.join ("$EWEASEL", "control", "catalog")
+	catalog = os.path.realpath (os.path.expandvars (catalog))
+	return catalog
+
+def _invoke_eweasel (command, catalog, keep_all):
 	if not os.path.exists (elocation.eweasel_build()):
 		os.makedirs (elocation.eweasel_build())
 	
 	# TODO: Move this to the appropriate location.
 	os.environ ['ISE_PRECOMP'] = os.path.expandvars (os.path.join ('$ISE_EIFFEL', 'precomp', 'spec', '$ISE_PLATFORM'))
 	
-	l_command = _set_eweasel_env()
-	if keep_all:
-		l_command = l_command + ['-keep', 'all']
-	else:
-		l_command = l_command + ['-keep', 'failed']
-	if catalog == None:
-		catalog = os.path.join ("$EWEASEL", "control", "catalog")
-	
-	catalog = os.path.realpath (os.path.expandvars (catalog))
-	SystemLogger.info ("Running Eweasel on catalog: " + catalog)
-	l_command = l_command + ['-catalog', catalog]
-	eutils.execute_with_output (l_command)
+	# TODO: On Windows we have to modify the config.eif script.
 
+	if keep_all:
+		command = command + ['-keep', 'all']
+	else:
+		command = command + ['-keep', 'failed']
+	command = command + ['-catalog', catalog]
+	eutils.execute_with_output (command)
+
+
+def catalog (catalog=None, keep_all=False):
+	l_command = _set_eweasel_env ()
+	l_catalog = _prepare_catalog (catalog)
+	SystemLogger.info ("Running Eweasel on catalog: " + l_catalog)
+	_invoke_eweasel (l_command, l_catalog, keep_all)
 	
-	
+
+def only (test):
+	l_command = _set_eweasel_env()
+	l_command = l_command + ['-filter', 'dir ' + test]
+	_invoke_eweasel (l_command, _prepare_catalog (None), True)
 	
 	
