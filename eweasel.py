@@ -75,7 +75,7 @@ def _set_eweasel_env():
 	l_command = l_command + ['-output', elocation.eweasel_build()]
 	return l_command
 
-def _prepare_catalog (catalog=None):
+def _prepare_catalog (catalog):
 	if catalog == None:
 		catalog = os.path.join ("$EWEASEL", "control", "catalog")
 	catalog = os.path.realpath (os.path.expandvars (catalog))
@@ -98,13 +98,16 @@ def _invoke_eweasel (command, catalog, keep_all):
 	command = command + ['-catalog', catalog]
 	eutils.execute_with_output (command)
 
+def run_all (keep_all=False):
+	SystemLogger.info ("Running the full eweasel test suite.")
+	_invoke_eweasel (_set_eweasel_env(), _prepare_catalog (None), keep_all)
 
-def catalog (catalog=None, keep_all=False):
+def catalog (catalog, keep_all=False):
+	assert catalog != None, "Catalog must not be None."
 	l_command = _set_eweasel_env ()
 	l_catalog = _prepare_catalog (catalog)
 	SystemLogger.info ("Running Eweasel on catalog: " + l_catalog)
 	_invoke_eweasel (l_command, l_catalog, keep_all)
-	
 
 def only (test):
 	l_command = _set_eweasel_env()

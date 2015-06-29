@@ -778,7 +778,7 @@ def main():
 			eweasel.install()
 		elif submode == 'precompile':
 			eweasel.precompile ('base-scoop-safe')
-		elif submode == 'run':
+		elif submode == 'catalog':
 			eweasel.catalog ('test.catalog')
 		elif submode == 'only':
 			eweasel.only (sys.argv[3])
