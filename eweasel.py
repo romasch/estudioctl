@@ -87,6 +87,7 @@ def _invoke_eweasel (command, catalog, keep_all):
 	
 	# TODO: Move this to the appropriate location.
 	os.environ ['ISE_PRECOMP'] = os.path.expandvars (os.path.join ('$ISE_EIFFEL', 'precomp', 'spec', '$ISE_PLATFORM'))
+	os.environ ['ISE_LANG'] = 'en_US'
 	
 	# TODO: On Windows we have to modify the config.eif script.
 
