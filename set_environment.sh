@@ -43,7 +43,7 @@ function setenv() {
     export ISE_PRECOMP=$ISE_EIFFEL/precomp/spec/$ISE_PLATFORM
 
         # PATH variable
-    export PATH=$ISE_EIFFEL/studio/spec/$ISE_PLATFORM/bin:$EWEASEL/spec/$ISE_PLATFORM/bin:$ORIGINAL_PATH
+    export PATH=$ISE_EIFFEL/studio/spec/$ISE_PLATFORM/bin:$EWEASEL/spec/$ISE_PLATFORM/bin:$EWEASEL/spec/$ISE_PLATFORM/bin:$ORIGINAL_PATH
 
         # Print variables to allow manual checking.
     echo "ISE_EIFFEL: $ISE_EIFFEL"

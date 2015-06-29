@@ -28,9 +28,6 @@ solution "EiffelRunTime"
 	configuration "release"
 		buildoptions (optimize)
 
--- TODO: The build for workbench libraries is broken, because a new file "stack.c" has been added.
--- A possible fix might be to add a symlink ipc_stack.c -> stack.c, and exclude the original file from the build.
-
 local rt_base = {
 	"run-time/malloc.c",
 	"run-time/garcol.c",
@@ -94,7 +91,11 @@ local rt_workbench = {
 	"ipc/shared/network.c",
 	"ipc/shared/select.c",
 	"ipc/shared/shword.c",
-	"ipc/shared/stack.c",
+		-- NOTE: This is a hack to get the runtime compiled.
+		-- We have two files stack.c. In python we therefore
+		-- create a symlink, such that the object file names are unique.
+-- 	"ipc/shared/stack.c",
+	"ipc/shared/stack_ipc.c",
 	"ipc/shared/stream.c",
 	"ipc/shared/system.c",
 	"ipc/shared/transfer.c",

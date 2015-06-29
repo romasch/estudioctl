@@ -125,13 +125,20 @@ def compile_runtime():
 		# build_libdir = os.path.join (builddir, 'spec', 'lib')
 	else:
 		# Shell and make based build system:
-		# TODO: This is currently broken because the libraries are generated at a wrong place.
 #		run_command (["make", "clobber"], sourcedir)
 #		run_command (["./quick_configure"], sourcedir)
 #		build_libdir = os.path.join (sourcedir, 'run-time')
 		
 		
 		# Premake based build system:
+		
+		# NOTE: This is a workaround for a current problem:
+		# Two files are called stack.c
+		# We therefore create a symlink between these files.
+		l_stack_ipc = os.path.join (sourcedir, "ipc", "shared", "stack_ipc.c")
+		if not os.path.exists (l_stack_ipc):
+			os.symlink (os.path.join (os.path.dirname (l_stack_ipc), "stack.c"), l_stack_ipc)
+		
 		if os.path.exists (os.path.join (builddir, "Makefile")):
 			run_command (["make", "clean"], builddir)
 		run_command (["premake4", "gmake"], sourcedir)
