@@ -778,6 +778,8 @@ def main():
 			eweasel.install()
 		elif submode == 'precompile':
 			eweasel.precompile ('base-scoop-safe')
+		elif submode == 'run':
+			eweasel.run ('test.catalog')
 	else:
 		if submode == None:
 			SystemLogger.error("invalid option " + mode)

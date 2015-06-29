@@ -10,6 +10,8 @@ import os
 import os.path
 import platform
 import subprocess
+import sys
+v_encoding = sys.stdout.encoding
 
 def execute(program, output_file = None, execution_directory = None):
 	"""
@@ -30,6 +32,14 @@ def execute(program, output_file = None, execution_directory = None):
 	SystemLogger.info("Finished with code " + str(proc.returncode))
 	return proc.returncode
 
+def execute_with_output (program, execution_directory = None):
+	SystemLogger.info ("Executing " + ' '.join (program))
+	if execution_directory is None:
+		proc = subprocess.Popen(program, stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
+		for line in proc.stdout:
+			SystemLogger.info (line.decode (v_encoding).rstrip())
+	SystemLogger.info("Finished with code " + str(proc.returncode))
+	return proc.returncode
 
 def extract (a_file):
 	""" 

@@ -1,7 +1,12 @@
 import os
+import platform
+import multiprocessing
+
+
 import elocation
 import esvn
 import ecompile
+import eutils
 from elogger import SystemLogger
 
 d_eweasel_svn = "https://svn.eiffel.com/eiffelstudio/trunk/eweasel"
@@ -45,3 +50,52 @@ def precompile (target = "all"):
 			SystemLogger.success ("Precompilation of " + target + " successful.")
 		else:
 			SystemLogger.error ("Precompilation of " + target + " failed.")
+
+def _set_eweasel_env():
+	l_eweasel = os.environ ['EWEASEL']
+	
+	l_command = [os.path.expandvars (os.path.join (l_eweasel, "spec", "$ISE_PLATFORM", "bin", ecompile._append_exe ("eweasel-mt")))]
+	l_command = l_command + ['-max_threads', str(multiprocessing.cpu_count())]
+	l_command = l_command + ['-define', 'EWEASEL', l_eweasel]
+	l_command = l_command + ['-define', 'INCLUDE', os.path.join (l_eweasel, 'control')]
+	l_command = l_command + ['-define', 'ISE_EIFFEL', os.environ ['ISE_EIFFEL']]
+	l_command = l_command + ['-define', 'ISE_PLATFORM', os.environ ['ISE_PLATFORM']]
+	l_command = l_command + ['-define', 'ISE_LIBRARY', os.environ ['ISE_LIBRARY']]
+	if platform.system() == 'Windows':
+		l_platform = 'WINDOWS'
+		if os.environ ['ISE_PLATFORM'] == 'dotnet':
+			l_platform = 'DOTNET'
+		
+		l_command = l_command + ['-define', l_platform, '1']
+		l_command = l_command + ['-define', 'PLATFORM_TYPE', l_platform]
+	else:
+		l_command = l_command + ['-define', 'UNIX', '1']
+		l_command = l_command + ['-define', 'PLATFORM_TYPE', 'unix']
+	l_command = l_command + ['-init', os.path.join (l_eweasel, 'control', 'init')]
+	l_command = l_command + ['-output', elocation.eweasel_build()]
+	return l_command
+
+def run (catalog = None, keep_all=False):
+	if not os.path.exists (elocation.eweasel_build()):
+		os.makedirs (elocation.eweasel_build())
+	
+	# TODO: Move this to the appropriate location.
+	os.environ ['ISE_PRECOMP'] = os.path.expandvars (os.path.join ('$ISE_EIFFEL', 'precomp', 'spec', '$ISE_PLATFORM'))
+	
+	l_command = _set_eweasel_env()
+	if keep_all:
+		l_command = l_command + ['-keep', 'all']
+	else:
+		l_command = l_command + ['-keep', 'failed']
+	if catalog == None:
+		catalog = os.path.join ("$EWEASEL", "control", "catalog")
+	
+	catalog = os.path.realpath (os.path.expandvars (catalog))
+	SystemLogger.info ("Running Eweasel on catalog: " + catalog)
+	l_command = l_command + ['-catalog', catalog]
+	eutils.execute_with_output (l_command)
+
+	
+	
+	
+	
