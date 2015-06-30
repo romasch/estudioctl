@@ -10,6 +10,11 @@
 export ORIGINAL_PATH=$PATH
 EIFFEL_BASE_PATH=$1
 
+export ESTUDIOCTL=$EIFFEL_BASE_PATH
+
+alias eweaselctl="python $ESTUDIOCTL/scripts/eweasel.py"
+alias estudioctl="python $ESTUDIOCTL/scripts/eve.py"
+
 function setenv() {
 
     if [ $# = 0 ];  then
@@ -57,4 +62,5 @@ function setenv() {
 }
 
 export -f setenv
+
 

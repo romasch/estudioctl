@@ -28,13 +28,23 @@ v_url_svn_trunk_src = "https://svn.eiffel.com/eiffelstudio/trunk/Src"
 v_url_svn_eve_src = "https://svn.eiffel.com/eiffelstudio/branches/eth/eve/Src"
 
 # Name of log file
-v_log_filename = "./log.txt"
+v_log_filename = "log.txt"
 
 # 0: no output
 # 1: error/warning/success output
 # 2: info output
 # 3: log output
 v_verbose_level = 2
+
+
+def base_directory ():
+	"""The root directory to which all files are relative to."""
+	if v_base_directory_override != None:
+		return os.path.realpath (v_base_directory_override)
+	elif (v_base_directory_environment_variable != None and v_base_directory_environment_variable in os.environ):
+		return os.path.realpath (os.path.expandvars (os.environ ["ESTUDIOCTL"]))
+	else:
+		return os.path.realpath ("../")
 
 
 # ----------------------------------------------------------------------------

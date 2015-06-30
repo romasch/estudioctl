@@ -79,9 +79,6 @@ v_dir_boogie = "./eve/Delivery/studio/tools/boogie"
 # Directory where merge will be performed (checkout directory for eve)
 v_dir_merge = "./merge_eve"
 
-# Name of log file
-v_log_filename = "./log.txt"
-
 # URLs
 v_url_svn_eve = "https://svn.eiffel.com/eiffelstudio/branches/eth/eve"
 #v_url_svn_eve_src = "https://svn.eiffel.com/eiffelstudio/branches/eth/eve/Src"

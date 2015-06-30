@@ -6,6 +6,7 @@
 #
 # ----------------------------------------------------------------------------
 
+import os
 import time
 import traceback
 import config
@@ -94,7 +95,7 @@ class Logger:
 		return self._log_file
 
 # A unique system-wide logger.
-SystemLogger = Logger(config.v_log_filename, config.v_verbose_level)
+SystemLogger = Logger(os.path.join (config.base_directory(), config.v_dir_build, config.v_log_filename), config.v_verbose_level)
 SystemLogger.__enter__()
 
 import atexit

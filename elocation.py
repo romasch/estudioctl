@@ -4,16 +4,17 @@ import os.path
 import shutil
 
 from elogger import SystemLogger
+from config import base_directory
 
 
-def base_directory ():
-	"""The root directory to which all files are relative to."""
-	if config.v_base_directory_override != None:
-		return os.path.realpath (v_estuidoctl_base_default)
-	elif (config.v_base_directory_environment_variable != None and config.v_base_directory_environment_variable in os.environ):
-		return os.path.realpath (os.path.expandvars (os.environ ["ESTUDIOCTL"]))
-	else:
-		return os.path.realpath ("../")
+#def base_directory ():
+	#"""The root directory to which all files are relative to."""
+	#if config.v_base_directory_override != None:
+		#return os.path.realpath (v_estuidoctl_base_default)
+	#elif (config.v_base_directory_environment_variable != None and config.v_base_directory_environment_variable in os.environ):
+		#return os.path.realpath (os.path.expandvars (os.environ ["ESTUDIOCTL"]))
+	#else:
+		#return os.path.realpath ("../")
 
 
 def trunk_source ():
