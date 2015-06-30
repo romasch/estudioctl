@@ -112,6 +112,7 @@ def generate (a_filter, name='autogen'):
 			target.write ('source_path $BUGS\n')
 			for line in source:
 				if l_filter.evaluate (line):
+					print (line.rstrip())
 					target.write (line)
 
 def run_all (keep_all=False):
