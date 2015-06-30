@@ -2,7 +2,7 @@ import os
 import platform
 import multiprocessing
 
-
+import boolean
 import elocation
 import esvn
 import ecompile
@@ -97,6 +97,18 @@ def _invoke_eweasel (command, catalog, keep_all):
 		command = command + ['-keep', 'failed']
 	command = command + ['-catalog', catalog]
 	eutils.execute_with_output (command)
+
+def generate (a_filter, name='autogen'):
+	SystemLogger.info ("Creating catalog with filter: " + a_filter)
+	l_parser = boolean.Parser (a_filter)
+	l_filter = l_parser.parse()
+	l_target_path = os.path.join (elocation.build(), name + '.eweasel_catalog')
+	with open (_prepare_catalog(None), 'r') as source:
+		with open (l_target_path, 'a') as target:
+			target.write ('source_path $BUGS\n')
+			for line in source:
+				if l_filter.evaluate (line):
+					target.write (line)
 
 def run_all (keep_all=False):
 	SystemLogger.info ("Running the full eweasel test suite.")
