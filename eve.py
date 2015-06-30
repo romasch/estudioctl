@@ -779,7 +779,12 @@ def main():
 		elif submode == 'precompile':
 			eweasel.precompile ('base-scoop-safe')
 		elif submode == 'catalog':
-			eweasel.catalog ('test.catalog')
+			l_catalog = None
+			if len (sys.argv) > 3:
+				l_catalog = sys.argv[3]
+			eweasel.catalog (l_catalog)
+		elif submode == 'generate':
+			eweasel.generate (' '.join(sys.argv[3:]))
 		elif submode == 'only':
 			eweasel.only (sys.argv[3])
 	else:

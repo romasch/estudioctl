@@ -78,8 +78,12 @@ def _set_eweasel_env():
 def _prepare_catalog (catalog):
 	if catalog == None:
 		catalog = os.path.join ("$EWEASEL", "control", "catalog")
-	catalog = os.path.realpath (os.path.expandvars (catalog))
-	return catalog
+	catalog = os.path.expandvars (catalog)
+	if not os.path.exists (catalog):
+		catalog = os.path.join (elocation.build(), catalog + '.eweasel_catalog')
+
+	assert os.path.exists (catalog), "Catalog does not exist."
+	return os.path.realpath (catalog)
 
 def _invoke_eweasel (command, catalog, keep_all):
 	if not os.path.exists (elocation.eweasel_build()):
@@ -104,7 +108,7 @@ def generate (a_filter, name='autogen'):
 	l_filter = l_parser.parse()
 	l_target_path = os.path.join (elocation.build(), name + '.eweasel_catalog')
 	with open (_prepare_catalog(None), 'r') as source:
-		with open (l_target_path, 'a') as target:
+		with open (l_target_path, 'w') as target:
 			target.write ('source_path $BUGS\n')
 			for line in source:
 				if l_filter.evaluate (line):
@@ -114,7 +118,7 @@ def run_all (keep_all=False):
 	SystemLogger.info ("Running the full eweasel test suite.")
 	_invoke_eweasel (_set_eweasel_env(), _prepare_catalog (None), keep_all)
 
-def catalog (catalog, keep_all=False):
+def catalog (catalog='autogen', keep_all=False):
 	assert catalog != None, "Catalog must not be None."
 	l_command = _set_eweasel_env ()
 	l_catalog = _prepare_catalog (catalog)
