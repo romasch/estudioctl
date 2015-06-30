@@ -124,10 +124,3 @@ def catalog (catalog='autogen', keep_all=False):
 	l_catalog = _prepare_catalog (catalog)
 	SystemLogger.info ("Running Eweasel on catalog: " + l_catalog)
 	_invoke_eweasel (l_command, l_catalog, keep_all)
-
-def only (test):
-	l_command = _set_eweasel_env()
-	l_command = l_command + ['-filter', 'dir ' + test]
-	_invoke_eweasel (l_command, _prepare_catalog (None), True)
-	
-	

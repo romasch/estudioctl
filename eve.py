@@ -772,21 +772,30 @@ def main():
 	elif mode == 'merge':
 		make_merge()
 	elif mode == 'eweasel':
+		eweasel_arg = None
+		if len (sys.argv) > 3:
+			eweasel_arg = sys.argv[3]
+		
 		if not check_environment_variables():
 			update_environment_variables()
 		if submode == 'install':
 			eweasel.install()
 		elif submode == 'precompile':
-			eweasel.precompile ('base-scoop-safe')
+			if eweasel_arg == None:
+				eweasel_arg = 'all'
+			eweasel.precompile (eweasel_arg)
 		elif submode == 'catalog':
-			l_catalog = None
-			if len (sys.argv) > 3:
-				l_catalog = sys.argv[3]
-			eweasel.catalog (l_catalog)
+			if eweasel_arg == None:
+				eweasel_arg = 'autogen'
+			eweasel.catalog (eweasel_arg)
 		elif submode == 'generate':
+			assert eweasel_arg != None, "Must provide argument"
+			eweasel.generate (' '.join(sys.argv[4:]), eweasel_arg)
+		elif submode == 'autogen':
 			eweasel.generate (' '.join(sys.argv[3:]))
-		elif submode == 'only':
-			eweasel.only (sys.argv[3])
+		elif submode == 'run':
+			eweasel.generate (' '.join(sys.argv[3:]))
+			eweasel.catalog ()
 	else:
 		if submode == None:
 			SystemLogger.error("invalid option " + mode)
