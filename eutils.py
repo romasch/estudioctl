@@ -33,11 +33,12 @@ def execute(program, output_file = None, execution_directory = None):
 	return proc.returncode
 
 def execute_with_output (program, execution_directory = None):
-	SystemLogger.info ("Executing " + ' '.join (program))
+	SystemLogger.debug ("Executing " + ' '.join (program))
 	if execution_directory is None:
 		proc = subprocess.Popen(program, stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
 		for line in proc.stdout:
 			SystemLogger.info (line.decode (v_encoding).rstrip())
+	proc.wait()
 	SystemLogger.info("Finished with code " + str(proc.returncode))
 	return proc.returncode
 
