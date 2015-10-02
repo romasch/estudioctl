@@ -85,7 +85,7 @@ v_url_svn_eve = "https://svn.eiffel.com/eiffelstudio/branches/eth/eve"
 v_url_svn_eve_src = config.v_url_svn_eve_src
 #v_url_svn_trunk = "https://svn.eiffel.com/eiffelstudio/trunk"
 v_url_svn_trunk = config.v_url_svn_trunk_src
-v_url_eiffelstudio_download = ["ftp://ftp.eiffel.com/pub/beta/nightly", "ftp://ftp.eiffel.com/pub/beta/15.01/", "ftp://ftp.eiffel.com/pub/beta/15.05/"]
+v_url_eiffelstudio_download = ["ftp://ftp.eiffel.com/pub/beta/nightly", "ftp://ftp.eiffel.com/pub/beta/15.08/"]
 
 v_svn_user = ""
 v_svn_password = ""
@@ -761,7 +761,8 @@ def main():
 		if not check_environment_variables():
 			update_environment_variables()
 		#finalize_eve('bench')
-		finalize_eve ('batch', 'ecb')
+		#finalize_eve ('batch', 'ecb')
+		finalize_eve ('bench', 'ec')
 	elif mode == 'delivery':
 		if not check_environment_variables():
 			update_environment_variables()

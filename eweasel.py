@@ -1,6 +1,7 @@
 import os
 import platform
 import multiprocessing
+import shutil
 
 import boolean
 import elocation
@@ -92,14 +93,30 @@ def _invoke_eweasel (command, catalog, keep_all):
 	os.environ ['ISE_PRECOMP'] = os.path.expandvars (os.path.join ('$ISE_EIFFEL', 'precomp', 'spec', '$ISE_PLATFORM'))
 	os.environ ['ISE_LANG'] = 'en_US'
 	
-	# TODO: On Windows we have to modify the config.eif script.
-
 	if keep_all:
 		command = command + ['-keep', 'all']
 	else:
 		command = command + ['-keep', 'failed']
 	command = command + ['-catalog', catalog]
-	eutils.execute_with_output (command)
+	
+	# On Windows we have to modify the config.eif script. 
+	# TODO: This also needs to happen for precompiles...
+	if platform.system() == 'Windows':
+		l_path = os.path.expandvars (os.path.join ('$ISE_EIFFEL', 'studio', 'config', '$ISE_PLATFORM', 'msc'))
+		l_config = os.path.join (l_path, 'config.eif')
+		l_backup = os.path.join (l_path, 'config.eif.orig')
+		
+		shutil.copyfile (l_config, l_backup)
+		
+		with open (l_backup, 'r') as source:
+			with open (l_config, 'w') as target:
+				for line in source:
+					target.write (line.replace ('-SUBSYSTEM:WINDOWS', '-SUBSYSTEM:CONSOLE'))
+		
+		eutils.execute_with_output (command)
+		shutil.copyfile (l_backup, l_config)
+	else:
+		eutils.execute_with_output (command)
 
 def generate (a_filter, name='autogen'):
 	l_parser = boolean.Parser (a_filter)

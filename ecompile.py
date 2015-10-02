@@ -184,11 +184,12 @@ class EiffelProject:
 
 	def clean (self):
 		l_path = os.path.join (self._project_path, "EIFGENs", self._target)
-		SystemLogger.info ("Cleaning Eiffel program at " + l_path)
-		elocation.delete (l_path)
-		l_path = os.path.dirname (l_path)
-		if os.listdir (l_path) == []:
+		if os.path.exists (l_path):
+			SystemLogger.info ("Cleaning Eiffel program at " + l_path)
 			elocation.delete (l_path)
+			l_path = os.path.dirname (l_path)
+			if os.listdir (l_path) == []:
+				elocation.delete (l_path)
 		
 
 	def freeze (self):
