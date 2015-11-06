@@ -44,6 +44,8 @@ def precompile (target):
 		precompile ("base-mt")
 		precompile ("base-scoop-safe")
 	else:
+		if target == "bss": # Shortcut for base-scoop-safe
+			target = "base-scoop-safe"
 		l_path = os.path.expandvars (os.path.join ("$ISE_EIFFEL", "precomp", "spec", "$ISE_PLATFORM", target + ".ecf"))
 		l_project = ecompile.EiffelProject (l_path, target, "driver")
 		if l_project.precompile():

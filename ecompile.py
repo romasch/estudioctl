@@ -79,6 +79,7 @@ def compile_libraries (libs):
 		run_command (d_compile_command, lib)
 
 ################# Runtime compilation ##################
+	
 
 def compile_runtime():
 	builddir = os.path.join (elocation.build(), "runtime")

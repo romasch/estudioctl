@@ -14,6 +14,7 @@ export ESTUDIOCTL=$EIFFEL_BASE_PATH
 
 alias eweaselctl="python $ESTUDIOCTL/scripts/eweasel.py"
 alias estudioctl="python $ESTUDIOCTL/scripts/eve.py"
+alias showlog="cat $ESTUDIOCTL/build/log.txt"
 
 function setenv() {
 
